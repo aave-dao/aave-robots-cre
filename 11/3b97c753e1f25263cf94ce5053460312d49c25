@@ -1,0 +1,33 @@
+workflows/fee-shares-minter/offchain/workflow.test.ts
+  s_9f2b1bd9c8c29b::t_6be0949dd4bfb8 13,105,124
+  s_9f2b1bd9c8c29b::t_a314f36d643358 1-12,14-104,106-123,125-126
+workflows/fee-shares-minter/README.md
+  s_9f2b1bd9c8c29b::t_01634cde271c6d 55,60
+.github/workflows/main.yml
+  s_9f2b1bd9c8c29b::t_30817ad63e235b 46,56-58
+workflows/shared/offchain/testing/mocks.ts
+  s_9f2b1bd9c8c29b::t_56f7989a0a86c3 1-6,8-36
+  s_9f2b1bd9c8c29b::t_6be0949dd4bfb8 7
+Makefile
+  s_9f2b1bd9c8c29b::t_47d74ad420164e 15
+workflows/fee-shares-minter/offchain/package.json
+  s_9f2b1bd9c8c29b::t_3a45a305f3d9b8 7-8,17
+README.md
+  s_9f2b1bd9c8c29b::t_5cd1cb4ee16c7d 77,79-81
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.1",
+  "base_commit_sha": "113b97c753e1f25263cf94ce5053460312d49c25",
+  "prompts": {},
+  "sessions": {
+    "s_9f2b1bd9c8c29b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1cbc817c-07b2-4d00-b43b-6ba07813281c",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
