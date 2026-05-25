@@ -1,0 +1,9 @@
+{
+  "schedule": "*/5 * * * *",
+  "evms": [
+    {
+      "chainName": "ethereum-mainnet",
+      "targets": []
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+# ==========================================================================
+# CRE PROJECT SETTINGS FILE
+# ==========================================================================
+# Project-wide settings. Each target defines cre-cli, account, and rpcs.
+# Workflow-specific values live in each workflow's workflow.yaml and override
+# values in this file.
+
+# ==========================================================================
+staging-settings:
+  rpcs:
+    - chain-name: ethereum-mainnet
+      url: https://ethereum-rpc.publicnode.com
+
+# ==========================================================================
+production-settings:
+  rpcs:
+    - chain-name: ethereum-mainnet
+      url: https://ethereum-rpc.publicnode.com

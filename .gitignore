@@ -1,0 +1,12 @@
+cache/
+out/
+broadcast/
+
+.env
+.idea
+.vscode
+
+node_modules/
+dist/
+
+.DS_Store

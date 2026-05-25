@@ -1,0 +1,19 @@
+# ==========================================================================
+# CRE WORKFLOW SETTINGS — FeeSharesMinter
+# ==========================================================================
+staging-settings:
+  user-workflow:
+    workflow-name: "fee-shares-minter-staging"
+  workflow-artifacts:
+    workflow-path: "./main.ts"
+    config-path: "./config.staging.json"
+    secrets-path: ""
+
+# ==========================================================================
+production-settings:
+  user-workflow:
+    workflow-name: "fee-shares-minter-production"
+  workflow-artifacts:
+    workflow-path: "./main.ts"
+    config-path: "./config.production.json"
+    secrets-path: ""

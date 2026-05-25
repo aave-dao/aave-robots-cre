@@ -1,0 +1,69 @@
+name: Main workflow
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  foundry:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+      - name: Build
+        run: forge build --sizes
+      - name: Unit tests
+        run: forge test --no-match-contract 'Fork' -vvv
+      - name: Require RPC_MAINNET for fork tests
+        env:
+          RPC_MAINNET: ${{ secrets.RPC_MAINNET }}
+        run: |
+          if [ -z "$RPC_MAINNET" ]; then
+            echo "::error::secrets.RPC_MAINNET is not configured for this repo." >&2
+            echo "::error::The fork test suite forks Ethereum mainnet and must run on every PR." >&2
+            echo "::error::Set the RPC_MAINNET secret in repo Settings → Secrets and variables → Actions." >&2
+            exit 1
+          fi
+      - name: Fork tests
+        env:
+          RPC_MAINNET: ${{ secrets.RPC_MAINNET }}
+        run: forge test --match-contract 'Fork' -vvv --ffi
+
+  typescript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install shared offchain deps
+        working-directory: workflows/shared/offchain
+        run: npm ci
+      - name: Install workflow deps
+        working-directory: workflows/fee-shares-minter/offchain
+        run: npm ci
+      - name: Typecheck
+        working-directory: workflows/fee-shares-minter/offchain
+        run: npm run typecheck
+
+  abis-up-to-date:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+      - name: Regenerate ABIs and verify no diff
+        run: |
+          npm run generate-abis
+          git diff --exit-code -- workflows/shared/offchain/abi || {
+            echo "Checked-in ABIs are stale. Run 'npm run generate-abis' and commit the result." >&2
+            exit 1
+          }
