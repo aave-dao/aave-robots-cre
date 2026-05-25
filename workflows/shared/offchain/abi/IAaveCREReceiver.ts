@@ -2,64 +2,64 @@
 
 export const IAaveCREReceiverABI = [
   {
-    type: 'function',
-    name: 'checkUpkeep',
-    inputs: [
+    "type": "function",
+    "name": "checkUpkeep",
+    "inputs": [
       {
-        name: 'checkData',
-        type: 'bytes',
-        internalType: 'bytes',
-      },
+        "name": "checkData",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
     ],
-    outputs: [
+    "outputs": [
       {
-        name: 'upkeepNeeded',
-        type: 'bool',
-        internalType: 'bool',
+        "name": "upkeepNeeded",
+        "type": "bool",
+        "internalType": "bool"
       },
       {
-        name: 'performData',
-        type: 'bytes',
-        internalType: 'bytes',
-      },
+        "name": "performData",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
     ],
-    stateMutability: 'view',
+    "stateMutability": "view"
   },
   {
-    type: 'function',
-    name: 'onReport',
-    inputs: [
+    "type": "function",
+    "name": "onReport",
+    "inputs": [
       {
-        name: 'metadata',
-        type: 'bytes',
-        internalType: 'bytes',
+        "name": "metadata",
+        "type": "bytes",
+        "internalType": "bytes"
       },
       {
-        name: 'report',
-        type: 'bytes',
-        internalType: 'bytes',
-      },
+        "name": "report",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
     ],
-    outputs: [],
-    stateMutability: 'nonpayable',
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
-    type: 'function',
-    name: 'supportsInterface',
-    inputs: [
+    "type": "function",
+    "name": "supportsInterface",
+    "inputs": [
       {
-        name: 'interfaceId',
-        type: 'bytes4',
-        internalType: 'bytes4',
-      },
+        "name": "interfaceId",
+        "type": "bytes4",
+        "internalType": "bytes4"
+      }
     ],
-    outputs: [
+    "outputs": [
       {
-        name: '',
-        type: 'bool',
-        internalType: 'bool',
-      },
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
     ],
-    stateMutability: 'view',
-  },
+    "stateMutability": "view"
+  }
 ] as const;
