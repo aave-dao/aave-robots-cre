@@ -19,19 +19,19 @@ jobs:
         run: forge build --sizes
       - name: Unit tests
         run: forge test --no-match-contract 'Fork' -vvv
-      - name: Require RPC_MAINNET for fork tests
+      - name: Require ALCHEMY_API_KEY for fork tests
         env:
-          RPC_MAINNET: ${{ secrets.RPC_MAINNET }}
+          ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_API_KEY }}
         run: |
-          if [ -z "$RPC_MAINNET" ]; then
-            echo "::error::secrets.RPC_MAINNET is not configured for this repo." >&2
+          if [ -z "$ALCHEMY_API_KEY" ]; then
+            echo "::error::secrets.ALCHEMY_API_KEY is not configured for this repo." >&2
             echo "::error::The fork test suite forks Ethereum mainnet and must run on every PR." >&2
-            echo "::error::Set the RPC_MAINNET secret in repo Settings → Secrets and variables → Actions." >&2
+            echo "::error::Inherit the ALCHEMY_API_KEY org secret or set it in repo Settings → Secrets and variables → Actions." >&2
             exit 1
           fi
       - name: Fork tests
         env:
-          RPC_MAINNET: ${{ secrets.RPC_MAINNET }}
+          ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_API_KEY }}
         run: forge test --match-contract 'Fork' -vvv --ffi
 
   typescript:

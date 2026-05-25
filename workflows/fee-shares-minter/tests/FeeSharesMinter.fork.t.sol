@@ -25,11 +25,10 @@ contract FeeSharesMinterForkTest is Test {
   IAccessManager internal accessManager;
 
   function setUp() public {
-    string memory rpc = vm.envOr('RPC_MAINNET', string(''));
-    if (bytes(rpc).length == 0) {
+    if (bytes(vm.envOr('ALCHEMY_API_KEY', string(''))).length == 0) {
       vm.skip(true);
     }
-    vm.createSelectFork(rpc);
+    vm.createSelectFork('mainnet');
 
     hub = AaveV4EthereumHubs.CORE_HUB;
     accessManager = IAccessManager(address(AaveV4Ethereum.ACCESS_MANAGER));
@@ -52,9 +51,10 @@ contract FeeSharesMinterForkTest is Test {
   }
 
   function test_fork_setConfig_revertsForUnlistedAsset() public {
+    uint256 assetCount = hub.getAssetCount();
     vm.prank(owner);
     vm.expectRevert(IHub.AssetNotListed.selector);
-    minter.setConfig(address(hub), hub.getAssetCount(), 1);
+    minter.setConfig(address(hub), assetCount, 1);
   }
 
   function test_fork_onReport_revertsWith_ConditionsNotMet_whenUnconfigured() public {
