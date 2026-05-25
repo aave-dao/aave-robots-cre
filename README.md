@@ -74,9 +74,11 @@ make test-fork      # RPC_MAINNET=... make test-fork
 make test           # both
 ```
 
-Per-workflow TS typechecks are wired separately (e.g. `make typecheck-fee-shares-minter`) and require `make build` first.
+Per-workflow TS typechecks and offchain unit tests are wired separately (e.g. `make typecheck-fee-shares-minter`, `make test-offchain-fee-shares-minter`). Typechecks require `make build` first. Offchain tests use the cre-sdk's `EvmMock` to stub the EVM client and exercise the workflow handler end-to-end against canned responses; they run on `bun` (must be on `PATH`).
 
-CI (`.github/workflows/main.yml`) runs the foundry suite (unit + fork tests) and the TS typecheck on every PR. `secrets.RPC_MAINNET` must be configured — the fork-test step fails hard if it's missing.
+Generic offchain test helpers (`encodeCheckUpkeepResult`, `mockLog`, `mockReceipt`) live in [`workflows/shared/offchain/testing/mocks.ts`](workflows/shared/offchain/testing/mocks.ts) and are reusable from any robot's `workflow.test.ts`.
+
+CI (`.github/workflows/main.yml`) runs the foundry suite (unit + fork tests), the TS typecheck, and the offchain bun tests on every PR. `secrets.RPC_MAINNET` must be configured — the fork-test step fails hard if it's missing.
 
 ## Deploying
 

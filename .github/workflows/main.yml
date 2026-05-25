@@ -43,6 +43,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - uses: oven-sh/setup-bun@v2
       - name: Install shared offchain deps
         working-directory: workflows/shared/offchain
         run: npm ci
@@ -52,6 +53,9 @@ jobs:
       - name: Typecheck
         working-directory: workflows/fee-shares-minter/offchain
         run: npm run typecheck
+      - name: Offchain tests
+        working-directory: workflows/fee-shares-minter/offchain
+        run: bun test
 
   abis-up-to-date:
     runs-on: ubuntu-latest
