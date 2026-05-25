@@ -1,0 +1,24 @@
+README.md
+  s_9f2b1bd9c8c29b::t_bd25f594fed005 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.1",
+  "base_commit_sha": "4769cbca26f14d63bd0f90949749329b41b1909e",
+  "prompts": {},
+  "humans": {
+    "h_0f977de3f043fc": {
+      "author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  },
+  "sessions": {
+    "s_9f2b1bd9c8c29b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1cbc817c-07b2-4d00-b43b-6ba07813281c",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
