@@ -1,0 +1,39 @@
+.env.example
+  s_9f2b1bd9c8c29b::t_0b72913de00a4e 4-13
+foundry.toml
+  s_9f2b1bd9c8c29b::t_faa8cb835d2dad 16-24
+README.md
+  s_9f2b1bd9c8c29b::t_5ecf5f125b42c8 73
+  s_9f2b1bd9c8c29b::t_816be6e678dc65 81
+.github/workflows/main.yml
+  s_9f2b1bd9c8c29b::t_96604b55198723 34
+workflows/fee-shares-minter/README.md
+  s_9f2b1bd9c8c29b::t_de0e4a636ec319 54,58
+workflows/fee-shares-minter/tests/FeeSharesMinter.fork.t.sol
+  s_9f2b1bd9c8c29b::t_d17b020aa3cb00 23,33,37-38
+  s_9f2b1bd9c8c29b::t_7d2120c0c1131d 26-27,30,39,41
+  s_9f2b1bd9c8c29b::t_19a3071d7c4f26 9
+workflows/fee-shares-minter/src/FeeSharesMinter.sol
+  h_0f977de3f043fc 14-16,22-24,42-45
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.1",
+  "base_commit_sha": "939079ca8752df296a3800d84c122959136faf45",
+  "prompts": {},
+  "humans": {
+    "h_0f977de3f043fc": {
+      "author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  },
+  "sessions": {
+    "s_9f2b1bd9c8c29b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1cbc817c-07b2-4d00-b43b-6ba07813281c",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
