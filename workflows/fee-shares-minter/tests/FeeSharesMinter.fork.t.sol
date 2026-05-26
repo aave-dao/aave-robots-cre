@@ -3,10 +3,10 @@ pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
 
-import {IAccessManager} from 'aave-v4/dependencies/openzeppelin/IAccessManager.sol';
 import {IHub} from 'aave-v4/hub/interfaces/IHub.sol';
 import {IAccessManagerEnumerable} from 'aave-v4/access/interfaces/IAccessManagerEnumerable.sol';
 import {PercentageMath} from 'aave-v4/libraries/math/PercentageMath.sol';
+import {Roles} from 'aave-v4/deployments/utils/libraries/Roles.sol';
 import {AaveV4Ethereum, AaveV4EthereumHubs} from 'aave-address-book/AaveV4Ethereum.sol';
 
 import {FeeSharesMinter} from '../src/FeeSharesMinter.sol';
@@ -15,30 +15,30 @@ import {IFeeSharesMinter} from '../src/IFeeSharesMinter.sol';
 contract FeeSharesMinterForkTest is Test {
   using PercentageMath for uint256;
 
-  uint64 internal constant HUB_FEE_MINTER_ROLE = 102;
-
   FeeSharesMinter internal minter;
   address internal owner = makeAddr('fork-owner');
   address internal anyone = makeAddr('fork-anyone');
 
   IHub internal hub;
-  IAccessManager internal accessManager;
+  IAccessManagerEnumerable internal accessManager;
 
   function setUp() public {
-    if (bytes(vm.envOr('ALCHEMY_API_KEY', string(''))).length == 0) {
+    string memory rpc = vm.envOr('RPC_MAINNET', string(''));
+    if (bytes(rpc).length == 0) {
       vm.skip(true);
     }
-    vm.createSelectFork('mainnet');
+    vm.createSelectFork(rpc);
 
     hub = AaveV4EthereumHubs.CORE_HUB;
-    accessManager = IAccessManager(address(AaveV4Ethereum.ACCESS_MANAGER));
+    accessManager = AaveV4Ethereum.ACCESS_MANAGER;
 
     minter = new FeeSharesMinter(owner);
 
-    vm.prank(_adminOf(accessManager));
-    accessManager.grantRole(HUB_FEE_MINTER_ROLE, address(minter), 0);
+    address defaultAdmin = accessManager.getRoleMember(Roles.ACCESS_MANAGER_ADMIN_ROLE, 0);
+    vm.prank(defaultAdmin);
+    accessManager.grantRole(Roles.HUB_FEE_MINTER_ROLE, address(minter), 0);
 
-    (bool isMember, ) = accessManager.hasRole(HUB_FEE_MINTER_ROLE, address(minter));
+    (bool isMember, ) = accessManager.hasRole(Roles.HUB_FEE_MINTER_ROLE, address(minter));
     assertTrue(isMember);
   }
 
@@ -109,12 +109,5 @@ contract FeeSharesMinterForkTest is Test {
       return (true, i, uint16(t));
     }
     return (false, 0, 0);
-  }
-
-  function _adminOf(IAccessManager am) internal view returns (address) {
-    IAccessManagerEnumerable enumerable = IAccessManagerEnumerable(address(am));
-    uint256 count = enumerable.getRoleMemberCount(0);
-    require(count > 0, 'no admin member on fork');
-    return enumerable.getRoleMember(0, 0);
   }
 }

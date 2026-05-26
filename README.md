@@ -70,7 +70,7 @@ All packages in the tree are pinned exactly. Adding a dependency requires waitin
 make install        # forge install + npm install (root + each workflow's offchain/)
 make build          # forge build --sizes — produces ABI artifacts in out/
 make test-unit      # forge test, excluding fork tests
-make test-fork      # ALCHEMY_API_KEY=... make test-fork
+make test-fork      # RPC_MAINNET=... make test-fork
 make test           # both
 ```
 
@@ -78,7 +78,7 @@ Per-workflow TS typechecks and offchain unit tests are wired separately (e.g. `m
 
 Generic offchain test helpers (`encodeCheckUpkeepResult`, `mockLog`, `mockReceipt`) live in [`workflows/shared/offchain/testing/mocks.ts`](workflows/shared/offchain/testing/mocks.ts) and are reusable from any robot's `workflow.test.ts`.
 
-CI (`.github/workflows/main.yml`) runs the foundry suite (unit + fork tests), the TS typecheck, and the offchain bun tests on every PR. `secrets.ALCHEMY_API_KEY` must be available to the workflow — the fork-test step fails hard if it's missing. Multi-chain RPC URLs are constructed from this single key in `foundry.toml`.
+CI (`.github/workflows/main.yml`) runs the foundry suite (unit + fork tests), the TS typecheck, and the offchain bun tests on every PR. `secrets.ALCHEMY_API_KEY` must be available to the workflow (typically inherited from the org); CI constructs `RPC_MAINNET` from it for the fork-tests step, which fails hard if the secret is missing. The fork test itself only reads `RPC_MAINNET` — no hardcoded provider.
 
 ## Deploying
 

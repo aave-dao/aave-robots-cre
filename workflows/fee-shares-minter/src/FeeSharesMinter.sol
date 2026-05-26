@@ -11,16 +11,17 @@ import {IReceiver} from 'aave-cre/IReceiver.sol';
 import {IAaveCREReceiver} from 'aave-cre/IAaveCREReceiver.sol';
 import {IFeeSharesMinter} from './IFeeSharesMinter.sol';
 
-/// @notice `onReport` is permissionless: both `metadata` and `msg.sender` are
-/// ignored. The action (`IHub.mintFeeShares`) is already gated by the owner's
-/// per-asset threshold, the hub's role check, and the round-to-non-zero guard
-/// in `_canMint`.
+/// @title FeeSharesMinter
+/// @author Aave Labs
+/// @notice Receives reports from the CRE workflow and mints fee shares on the hub when the configured threshold is crossed.
 contract FeeSharesMinter is IFeeSharesMinter, Ownable2Step, Rescuable {
   using PercentageMath for uint256;
 
   mapping(address hub => mapping(uint256 assetId => uint16)) internal _minAccruedFeesPercent;
 
-  constructor(address owner) Ownable(owner) {}
+  /// @dev Constructor.
+  /// @param initialOwner_ The address of the initial owner.
+  constructor(address initialOwner_) Ownable(initialOwner_) {}
 
   /// @inheritdoc IFeeSharesMinter
   function setConfig(
@@ -38,6 +39,10 @@ contract FeeSharesMinter is IFeeSharesMinter, Ownable2Step, Rescuable {
   }
 
   /// @inheritdoc IReceiver
+  /// @dev `onReport` is permissionless: both `metadata` and `msg.sender` are
+  /// ignored. The action (`IHub.mintFeeShares`) is already gated by the owner's
+  /// per-asset threshold, the hub's role check, and the round-to-non-zero guard
+  /// in `_canMint`.
   function onReport(bytes calldata /* metadata */, bytes calldata report) external override {
     (address hub, uint256 assetId) = abi.decode(report, (address, uint256));
     require(_canMint(hub, assetId), ConditionsNotMet());

@@ -51,11 +51,11 @@ Returns `true` only when **all** of:
 ```bash
 # from repo root
 forge test --match-path 'workflows/fee-shares-minter/tests/*.t.sol' --no-match-contract 'Fork' -vvv   # unit
-ALCHEMY_API_KEY=... forge test --match-contract 'FeeSharesMinterFork' -vvv --ffi                      # fork
+RPC_MAINNET=... forge test --match-contract 'FeeSharesMinterFork' -vvv --ffi                          # fork
 make test-offchain-fee-shares-minter                                                                  # CRE workflow (bun)
 ```
 
-The fork suite forks Ethereum mainnet against [`AaveV4EthereumHubs.CORE_HUB`](https://etherscan.io/address/0xCca852Bc40e560adC3b1Cc58CA5b55638ce826c9), grants `HUB_FEE_MINTER_ROLE` to a fresh minter via the live AccessManager admin, and exercises both the revert path (unconfigured asset → `ConditionsNotMet`) and the permissionless mint path (scans for an asset whose live ratio is mintable; skips if none is). It skips entirely when `ALCHEMY_API_KEY` is unset.
+The fork suite forks Ethereum mainnet against [`AaveV4EthereumHubs.CORE_HUB`](https://etherscan.io/address/0xCca852Bc40e560adC3b1Cc58CA5b55638ce826c9), grants `HUB_FEE_MINTER_ROLE` to a fresh minter via the live AccessManager admin, and exercises both the revert path (unconfigured asset → `ConditionsNotMet`) and the permissionless mint path (scans for an asset whose live ratio is mintable; skips if none is). It skips entirely when `RPC_MAINNET` is unset.
 
 `workflow.test.ts` mocks the cre-sdk EVM client via `EvmMock` and drives `createTargetHandler` end-to-end for each branch (no upkeep, gas-estimate revert, happy path with a decoded `MintFeeShares` event, missing event, log from wrong address). Generic helpers used by the test (`encodeCheckUpkeepResult`, `mockLog`, `mockReceipt`) live in [`../shared/offchain/testing/mocks.ts`](../shared/offchain/testing/mocks.ts) and are reusable from any robot's offchain tests. Requires `bun` on PATH.
 

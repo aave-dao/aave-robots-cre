@@ -31,7 +31,7 @@ jobs:
           fi
       - name: Fork tests
         env:
-          ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_API_KEY }}
+          RPC_MAINNET: https://eth-mainnet.g.alchemy.com/v2/${{ secrets.ALCHEMY_API_KEY }}
         run: forge test --match-contract 'Fork' -vvv --ffi
 
   typescript:
