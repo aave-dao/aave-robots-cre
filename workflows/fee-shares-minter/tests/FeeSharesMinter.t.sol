@@ -3,7 +3,8 @@ pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
 
-import {Ownable} from 'aave-v4/dependencies/openzeppelin/Ownable.sol';
+import {Ownable} from 'openzeppelin-contracts/contracts/access/Ownable.sol';
+import {IWithGuardian} from 'solidity-utils/contracts/access-control/interfaces/IWithGuardian.sol';
 import {IERC165} from 'openzeppelin-contracts/contracts/utils/introspection/IERC165.sol';
 import {PercentageMath} from 'aave-v4/libraries/math/PercentageMath.sol';
 import {IRescuable} from 'aave-v4/interfaces/IRescuable.sol';
@@ -30,18 +31,25 @@ contract FeeSharesMinterTest is Test {
   uint256 internal constant HAPPY_FEES = 100e18; // 10% of HAPPY_ADDED — above threshold
   uint256 internal constant HAPPY_PREVIEW_SHARES = 90e18;
 
+  address internal guardian;
   address internal bob;
   address internal anyone;
 
   function setUp() public {
     admin = makeAddr('admin');
+    guardian = makeAddr('guardian');
     bob = makeAddr('bob');
     anyone = makeAddr('anyone');
     hub = makeAddr('hub');
 
     MockHubHelpers.setAssetCount(hub, ASSET_COUNT);
 
-    minter = new FeeSharesMinter(admin);
+    minter = new FeeSharesMinter(admin, guardian);
+  }
+
+  function test_constructor_setsOwnerAndGuardian() public view {
+    assertEq(minter.owner(), admin);
+    assertEq(minter.guardian(), guardian);
   }
 
   function test_supportsInterface() public view {
@@ -57,9 +65,15 @@ contract FeeSharesMinterTest is Test {
     minter.setConfig(hub, ASSET_ID, 100);
   }
 
+  function test_setConfig_revertsWhenCalledByGuardian() public {
+    vm.prank(guardian);
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, guardian));
+    minter.setConfig(hub, ASSET_ID, 100);
+  }
+
   function test_fuzz_setConfig(uint16 minAccruedFeesPercent) public {
     minAccruedFeesPercent = uint16(
-      bound(minAccruedFeesPercent, 0, PercentageMath.PERCENTAGE_FACTOR)
+      bound(minAccruedFeesPercent, 1, PercentageMath.PERCENTAGE_FACTOR)
     );
 
     vm.expectEmit(address(minter));
@@ -95,7 +109,15 @@ contract FeeSharesMinterTest is Test {
     assertEq(minter.getConfig(otherHub, ASSET_ID), 200);
   }
 
-  function test_fuzz_setConfig_revertsWith_InvalidConfig(uint16 minAccruedFeesPercent) public {
+  function test_setConfig_revertsWith_InvalidConfig_whenZero() public {
+    vm.prank(admin);
+    vm.expectRevert(abi.encodeWithSelector(IFeeSharesMinter.InvalidConfig.selector, uint16(0)));
+    minter.setConfig(hub, ASSET_ID, 0);
+  }
+
+  function test_fuzz_setConfig_revertsWith_InvalidConfig_whenAboveMax(
+    uint16 minAccruedFeesPercent
+  ) public {
     minAccruedFeesPercent = uint16(
       bound(minAccruedFeesPercent, PercentageMath.PERCENTAGE_FACTOR + 1, type(uint16).max)
     );
@@ -113,16 +135,79 @@ contract FeeSharesMinterTest is Test {
     minter.setConfig(hub, ASSET_COUNT, 100);
   }
 
+  function test_disableMinting_byOwner() public {
+    _setMinPercent(ASSET_ID, HAPPY_THRESHOLD_BPS);
+
+    vm.expectEmit(address(minter));
+    emit IFeeSharesMinter.ConfigUpdated(hub, ASSET_ID, 0);
+
+    vm.prank(admin);
+    minter.disableMinting(hub, ASSET_ID);
+
+    assertEq(minter.getConfig(hub, ASSET_ID), 0);
+  }
+
+  function test_disableMinting_byGuardian() public {
+    _setMinPercent(ASSET_ID, HAPPY_THRESHOLD_BPS);
+
+    vm.prank(guardian);
+    minter.disableMinting(hub, ASSET_ID);
+
+    assertEq(minter.getConfig(hub, ASSET_ID), 0);
+  }
+
+  function test_disableMinting_revertsWith_NotOwnerOrGuardian() public {
+    vm.prank(bob);
+    vm.expectRevert(
+      abi.encodeWithSelector(IWithGuardian.OnlyGuardianOrOwnerInvalidCaller.selector, bob)
+    );
+    minter.disableMinting(hub, ASSET_ID);
+  }
+
+  function test_disableMinting_isIdempotent_whenAlreadyDisabled() public {
+    vm.startPrank(admin);
+    minter.disableMinting(hub, ASSET_ID);
+    minter.disableMinting(hub, ASSET_ID);
+    vm.stopPrank();
+
+    assertEq(minter.getConfig(hub, ASSET_ID), 0);
+  }
+
+  function test_disableMinting_onUnconfiguredAsset_doesNotRevert() public {
+    vm.prank(admin);
+    minter.disableMinting(hub, ASSET_ID);
+
+    assertEq(minter.getConfig(hub, ASSET_ID), 0);
+  }
+
+  function test_disableMinting_doesNotValidateAssetId() public {
+    vm.prank(admin);
+    minter.disableMinting(hub, ASSET_COUNT + 100);
+
+    assertEq(minter.getConfig(hub, ASSET_COUNT + 100), 0);
+  }
+
+  function test_disableMinting_makesCanMintFalse() public {
+    _setupHappyPath();
+    _assertCanMint(true);
+
+    vm.prank(guardian);
+    minter.disableMinting(hub, ASSET_ID);
+
+    _assertCanMint(false);
+  }
+
   function test_canMint_returnsTrue_onHappyPath() public {
     _setupHappyPath();
     _assertCanMint(true);
   }
 
-  function test_canMint_returnsFalse_whenThresholdSetToZero() public {
+  function test_canMint_returnsFalse_whenDisabled() public {
     _setupHappyPath();
     _assertCanMint(true);
 
-    _setMinPercent(ASSET_ID, 0);
+    vm.prank(admin);
+    minter.disableMinting(hub, ASSET_ID);
     _assertCanMint(false);
   }
 
@@ -192,11 +277,12 @@ contract FeeSharesMinterTest is Test {
     minter.onReport(junk, abi.encode(hub, ASSET_ID));
   }
 
-  function test_onReport_revertsWith_ConditionsNotMet_whenThresholdSetToZero() public {
+  function test_onReport_revertsWith_ConditionsNotMet_whenDisabled() public {
     _setupHappyPath();
     _assertCanMint(true);
 
-    _setMinPercent(ASSET_ID, 0);
+    vm.prank(admin);
+    minter.disableMinting(hub, ASSET_ID);
 
     vm.prank(anyone);
     vm.expectRevert(IFeeSharesMinter.ConditionsNotMet.selector);
@@ -227,20 +313,48 @@ contract FeeSharesMinterTest is Test {
     minter.rescueToken(token, bob, 100);
   }
 
-  function test_transferOwnership_2Step() public {
+  function test_updateGuardian_byOwner() public {
+    address newGuardian = makeAddr('newGuardian');
+
+    vm.expectEmit(address(minter));
+    emit IWithGuardian.GuardianUpdated(guardian, newGuardian);
+
+    vm.prank(admin);
+    minter.updateGuardian(newGuardian);
+
+    assertEq(minter.guardian(), newGuardian);
+  }
+
+  function test_updateGuardian_byGuardian() public {
+    address newGuardian = makeAddr('newGuardian');
+
+    vm.prank(guardian);
+    minter.updateGuardian(newGuardian);
+
+    assertEq(minter.guardian(), newGuardian);
+  }
+
+  function test_updateGuardian_revertsWith_NotOwnerOrGuardian() public {
+    vm.prank(bob);
+    vm.expectRevert(
+      abi.encodeWithSelector(IWithGuardian.OnlyGuardianOrOwnerInvalidCaller.selector, bob)
+    );
+    minter.updateGuardian(bob);
+  }
+
+  function test_transferOwnership() public {
     address newOwner = makeAddr('newOwner');
 
     vm.prank(admin);
     minter.transferOwnership(newOwner);
 
-    assertEq(minter.owner(), admin);
-    assertEq(minter.pendingOwner(), newOwner);
-
-    vm.prank(newOwner);
-    minter.acceptOwnership();
-
     assertEq(minter.owner(), newOwner);
-    assertEq(minter.pendingOwner(), address(0));
+  }
+
+  function test_transferOwnership_revertsWith_OwnableUnauthorized() public {
+    vm.prank(bob);
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, bob));
+    minter.transferOwnership(bob);
   }
 
   function _setMinPercent(uint256 assetId, uint16 percent) internal {

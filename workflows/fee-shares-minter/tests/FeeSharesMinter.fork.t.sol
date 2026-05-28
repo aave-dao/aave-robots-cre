@@ -17,6 +17,7 @@ contract FeeSharesMinterForkTest is Test {
 
   FeeSharesMinter internal minter;
   address internal owner = makeAddr('fork-owner');
+  address internal guardian = makeAddr('fork-guardian');
   address internal anyone = makeAddr('fork-anyone');
 
   IHub internal hub;
@@ -32,7 +33,7 @@ contract FeeSharesMinterForkTest is Test {
     hub = AaveV4EthereumHubs.CORE_HUB;
     accessManager = AaveV4Ethereum.ACCESS_MANAGER;
 
-    minter = new FeeSharesMinter(owner);
+    minter = new FeeSharesMinter(owner, guardian);
 
     address defaultAdmin = accessManager.getRoleMember(Roles.ACCESS_MANAGER_ADMIN_ROLE, 0);
     vm.prank(defaultAdmin);
@@ -45,9 +46,25 @@ contract FeeSharesMinterForkTest is Test {
   function test_fork_setConfig_acceptsRealAssetIds() public {
     assertGt(hub.getAssetCount(), 0);
 
+    vm.expectEmit(address(minter));
+    emit IFeeSharesMinter.ConfigUpdated(address(hub), 0, 1);
+
     vm.prank(owner);
     minter.setConfig(address(hub), 0, 1);
     assertEq(minter.getConfig(address(hub), 0), 1);
+  }
+
+  function test_fork_disableMinting_byGuardian() public {
+    vm.prank(owner);
+    minter.setConfig(address(hub), 0, 1);
+    assertEq(minter.getConfig(address(hub), 0), 1);
+
+    vm.expectEmit(address(minter));
+    emit IFeeSharesMinter.ConfigUpdated(address(hub), 0, 0);
+
+    vm.prank(guardian);
+    minter.disableMinting(address(hub), 0);
+    assertEq(minter.getConfig(address(hub), 0), 0);
   }
 
   function test_fork_setConfig_revertsForUnlistedAsset() public {
@@ -81,6 +98,13 @@ contract FeeSharesMinterForkTest is Test {
     );
     assertTrue(upkeepNeeded);
     assertEq(performData, abi.encode(address(hub), assetId));
+
+    uint256 expectedFees = hub.getAssetAccruedFees(assetId);
+    uint256 expectedShares = hub.previewAddByAssets(assetId, expectedFees);
+    address expectedFeeReceiver = hub.getAssetConfig(assetId).feeReceiver;
+
+    vm.expectEmit(address(hub));
+    emit IHub.MintFeeShares(assetId, expectedFeeReceiver, expectedShares, expectedFees);
 
     vm.prank(anyone);
     minter.onReport('', abi.encode(address(hub), assetId));

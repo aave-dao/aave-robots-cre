@@ -17,15 +17,20 @@ interface IFeeSharesMinter is IAaveCREReceiver {
   /// @notice Thrown when `onReport` runs but the mint conditions are not met.
   error ConditionsNotMet();
 
-  /// @notice Thrown when `setConfig` is called with a value above `PercentageMath.PERCENTAGE_FACTOR`.
+  /// @notice Thrown when `setConfig` is called with a value outside `(0, PercentageMath.PERCENTAGE_FACTOR]`.
   /// @param minAccruedFeesPercent Rejected value.
   error InvalidConfig(uint16 minAccruedFeesPercent);
 
   /// @notice Set the mint threshold for a (hub, asset) pair. Owner-only.
   /// @param hub Hub the threshold applies to.
   /// @param assetId Asset identifier within `hub`. Must be listed on the hub.
-  /// @param minAccruedFeesPercent Threshold in BPS, capped at `PercentageMath.PERCENTAGE_FACTOR`. 0 disables minting.
+  /// @param minAccruedFeesPercent Threshold in BPS, in `(0, PercentageMath.PERCENTAGE_FACTOR]`. Use `disableMinting` to set it to 0.
   function setConfig(address hub, uint256 assetId, uint16 minAccruedFeesPercent) external;
+
+  /// @notice Disable minting for a (hub, asset) pair by zeroing its threshold. Owner or guardian.
+  /// @param hub Hub the threshold applies to.
+  /// @param assetId Asset identifier within `hub`.
+  function disableMinting(address hub, uint256 assetId) external;
 
   /// @notice Returns the configured mint threshold for a (hub, asset) pair, in BPS.
   /// @param hub Hub the threshold applies to.

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
-import {Ownable2Step, Ownable} from 'aave-v4/dependencies/openzeppelin/Ownable2Step.sol';
+import {OwnableWithGuardian} from 'solidity-utils/contracts/access-control/OwnableWithGuardian.sol';
 import {IERC165} from 'openzeppelin-contracts/contracts/utils/introspection/IERC165.sol';
 import {PercentageMath} from 'aave-v4/libraries/math/PercentageMath.sol';
 import {Rescuable} from 'aave-v4/utils/Rescuable.sol';
@@ -14,14 +14,18 @@ import {IFeeSharesMinter} from './IFeeSharesMinter.sol';
 /// @title FeeSharesMinter
 /// @author Aave Labs
 /// @notice Receives reports from the CRE workflow and mints fee shares on the hub when the configured threshold is crossed.
-contract FeeSharesMinter is IFeeSharesMinter, Ownable2Step, Rescuable {
+contract FeeSharesMinter is IFeeSharesMinter, OwnableWithGuardian, Rescuable {
   using PercentageMath for uint256;
 
   mapping(address hub => mapping(uint256 assetId => uint16)) internal _minAccruedFeesPercent;
 
   /// @dev Constructor.
   /// @param initialOwner_ The address of the initial owner.
-  constructor(address initialOwner_) Ownable(initialOwner_) {}
+  /// @param initialGuardian_ The address of the initial guardian.
+  constructor(
+    address initialOwner_,
+    address initialGuardian_
+  ) OwnableWithGuardian(initialOwner_, initialGuardian_) {}
 
   /// @inheritdoc IFeeSharesMinter
   function setConfig(
@@ -30,12 +34,18 @@ contract FeeSharesMinter is IFeeSharesMinter, Ownable2Step, Rescuable {
     uint16 minAccruedFeesPercent
   ) external onlyOwner {
     require(
-      minAccruedFeesPercent <= PercentageMath.PERCENTAGE_FACTOR,
+      minAccruedFeesPercent > 0 && minAccruedFeesPercent <= PercentageMath.PERCENTAGE_FACTOR,
       InvalidConfig(minAccruedFeesPercent)
     );
     require(assetId < IHub(hub).getAssetCount(), IHub.AssetNotListed());
     _minAccruedFeesPercent[hub][assetId] = minAccruedFeesPercent;
     emit ConfigUpdated(hub, assetId, minAccruedFeesPercent);
+  }
+
+  /// @inheritdoc IFeeSharesMinter
+  function disableMinting(address hub, uint256 assetId) external onlyOwnerOrGuardian {
+    _minAccruedFeesPercent[hub][assetId] = 0;
+    emit ConfigUpdated(hub, assetId, 0);
   }
 
   /// @inheritdoc IReceiver
