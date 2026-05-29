@@ -3,6 +3,7 @@
   "evms": [
     {
       "chainName": "ethereum-mainnet",
+      "isTestnet": false,
       "targets": []
     }
   ]

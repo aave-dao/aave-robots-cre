@@ -21,8 +21,20 @@ abstract contract BaseDeploy is Script {
   }
 }
 
+// make deploy-mainnet-fee-shares-minter-dry  # simulate
+// make deploy-mainnet-fee-shares-minter      # broadcast
 contract DeployMainnet is BaseDeploy {
   function run() external returns (address) {
     return _run(GovernanceV3Ethereum.EXECUTOR_LVL_1, GovernanceV3Ethereum.GOVERNANCE_GUARDIAN);
+  }
+}
+
+// make deploy-sepolia-fee-shares-minter-dry  # simulate (requires SEPOLIA_OWNER in .env)
+// make deploy-sepolia-fee-shares-minter      # broadcast
+contract DeploySepolia is BaseDeploy {
+  function run() external returns (address) {
+    address owner = vm.envAddress('SEPOLIA_OWNER');
+    address guardian = vm.envOr('SEPOLIA_GUARDIAN', owner);
+    return _run(owner, guardian);
   }
 }

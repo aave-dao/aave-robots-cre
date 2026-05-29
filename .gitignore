@@ -8,5 +8,6 @@ broadcast/
 
 node_modules/
 dist/
+.cre_build_tmp.js
 
 .DS_Store

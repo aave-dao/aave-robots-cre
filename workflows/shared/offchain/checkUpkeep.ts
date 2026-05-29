@@ -1,4 +1,11 @@
-import {bytesToHex, cre, encodeCallMsg, hexToBase64, type Runtime} from '@chainlink/cre-sdk';
+import {
+  bytesToHex,
+  cre,
+  encodeCallMsg,
+  hexToBase64,
+  TxStatus,
+  type Runtime,
+} from '@chainlink/cre-sdk';
 import {decodeFunctionResult, encodeFunctionData, zeroAddress, type Hex} from 'viem';
 
 import {IAaveCREReceiverABI} from './abi/IAaveCREReceiver';
@@ -78,8 +85,15 @@ export function submitReport<TConfig>(
 
   const writeResult = evmClient.writeReport(runtime, {receiver: robotAddress, report}).result();
 
+  if (writeResult.txStatus !== TxStatus.SUCCESS) {
+    runtime.log(
+      `[${label}] writeReport status=${writeResult.txStatus} err=${writeResult.errorMessage ?? ''} — skipping`,
+    );
+    return null;
+  }
   if (!writeResult.txHash) {
-    throw new Error(`[${label}] writeReport returned no txHash`);
+    runtime.log(`[${label}] writeReport returned SUCCESS but no txHash — skipping`);
+    return null;
   }
   return bytesToHex(writeResult.txHash);
 }

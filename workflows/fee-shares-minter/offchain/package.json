@@ -5,7 +5,9 @@
   "main": "dist/main.js",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "bun test"
+    "test": "bun test",
+    "simulate:staging": "cre workflow simulate ./fee-shares-minter/offchain --project-root=../.. --env=../../../.env --target=staging-settings --non-interactive --trigger-index=0",
+    "simulate:production": "cre workflow simulate ./fee-shares-minter/offchain --project-root=../.. --env=../../../.env --target=production-settings --non-interactive --trigger-index=0"
   },
   "license": "UNLICENSED",
   "dependencies": {
