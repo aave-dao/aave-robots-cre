@@ -1,0 +1,98 @@
+workflows/fee-shares-minter/tests/FeeSharesMinter.fork.t.sol
+  s_9f2b1bd9c8c29b::t_ecd3f994fb36e4 83,85
+  s_9f2b1bd9c8c29b::t_d3975a01469ee5 63,67
+  s_9f2b1bd9c8c29b::t_38e2b6b3367087 91,131-133
+  s_9f2b1bd9c8c29b::t_658715cead37f1 80-82,89
+  s_9f2b1bd9c8c29b::t_b9813b9615e5d6 77,84,86-88,90,92-94,97,110-111,113,123,128-130
+workflows/fee-shares-minter/offchain/types.ts
+  s_9f2b1bd9c8c29b::t_8915279dd20ec0 6,15-16
+workflows/fee-shares-minter/offchain/package.json
+  s_9f2b1bd9c8c29b::t_2d2e0348fcbb57 9,11
+  s_9f2b1bd9c8c29b::t_cb5be8e859bb2a 10,12
+workflows/shared/offchain/checkUpkeep.ts
+  s_9f2b1bd9c8c29b::t_bf3f2d23b23ea2 29-40
+workflows/fee-shares-minter/src/FeeSharesMinter.sol
+  s_9f2b1bd9c8c29b::t_6a39e346906419 47-48
+  h_0f977de3f043fc 20-21
+  s_9f2b1bd9c8c29b::t_69f45e3945f615 57,71-72,79
+  s_9f2b1bd9c8c29b::t_bedfed28d12a55 39
+  s_9f2b1bd9c8c29b::t_6f6c4b0a65007d 58-64,73-78,80-81,91
+  s_9f2b1bd9c8c29b::t_404b40f745eda6 22
+  s_9f2b1bd9c8c29b::t_19eaaec2afbf9e 105,117-118
+workflows/project.yaml
+  s_9f2b1bd9c8c29b::t_956974529d1027 1,3-4
+workflows/shared/offchain/testing/mocks.ts
+  s_9f2b1bd9c8c29b::t_f6a7897d6597e0 32,36,40,42,47
+  s_9f2b1bd9c8c29b::t_91c47a0d00b380 33-35,37-39,41,43-44,61-63
+workflows/fee-shares-minter/offchain/tsconfig.json
+  s_9f2b1bd9c8c29b::t_9bdf60990e1f27 18-19
+workflows/fee-shares-minter/offchain/config.devnet.json
+  s_9f2b1bd9c8c29b::t_b5b8fbfef1913b 7
+  s_9f2b1bd9c8c29b::t_d5e158818fabfe 5-6
+workflows/fee-shares-minter/offchain/workflow.yaml
+  s_9f2b1bd9c8c29b::t_3f696295941e16 4,6,9
+.env.example
+  s_9f2b1bd9c8c29b::t_d07b1346f30e6c 15-17
+workflows/shared/offchain/addresses.ts
+  s_9f2b1bd9c8c29b::t_5fa2c36f38504d 1-12
+workflows/fee-shares-minter/tests/FeeSharesMinter.t.sol
+  s_9f2b1bd9c8c29b::t_6968b834f3c586 143,148,157,174,181,188
+  s_9f2b1bd9c8c29b::t_263d97a2da796d 252,256-266
+  s_9f2b1bd9c8c29b::t_f6c270cc56878c 308
+  s_9f2b1bd9c8c29b::t_a6d958958a75d0 27,267-272,274,276-278,280-285,287-288,290,292,294-300,302,304-307,309-310,315-316,318,320,322-333,337-340,342,344-347,355,363,376,379,386,389,395-400,402-404,411-419,423-433,437-450,454-459,525-533,540-542,546-548,550-551
+  s_9f2b1bd9c8c29b::t_dcf13c96c42659 201-210
+  s_9f2b1bd9c8c29b::t_64d6a60dd91494 279,286,289,301,311-314,319,321,334-336,341,343,401,405-407,420-422,434-436,451-453,543-545,549
+  s_9f2b1bd9c8c29b::t_9b98c56b617a54 251,253-255
+foundry.toml
+  s_9f2b1bd9c8c29b::t_da021838940de5 17
+workflows/fee-shares-minter/offchain/workflow.ts
+  s_9f2b1bd9c8c29b::t_cf41590959ac10 10,29,39-40,42,46,64,69-70,72,85-86,92,106-108,112-113,116-126,128-131,135-137,141,145-146
+  s_9f2b1bd9c8c29b::t_75c2cbb9ad0458 21
+  s_9f2b1bd9c8c29b::t_973b1f70845d98 50
+  s_9f2b1bd9c8c29b::t_e1200e7bd44081 28,41,45,47,110
+  s_9f2b1bd9c8c29b::t_8905ed61d53cc0 174,176,178-183
+workflows/fee-shares-minter/scripts/DeployFeeSharesMinter.s.sol
+  s_9f2b1bd9c8c29b::t_dccaebe60ff810 10-11,13-15
+  s_9f2b1bd9c8c29b::t_43216ef8be394d 12
+workflows/fee-shares-minter/offchain/config.production.json
+  s_9f2b1bd9c8c29b::t_b7b4429fc877a6 7
+  s_9f2b1bd9c8c29b::t_6bd7c494b645d3 2
+Makefile
+  s_9f2b1bd9c8c29b::t_a1529c860cb8f3 23
+  s_9f2b1bd9c8c29b::t_70cf53afbb117d 24
+  s_9f2b1bd9c8c29b::t_b8f8e5fda840d7 20-21
+workflows/fee-shares-minter/src/IFeeSharesMinter.sol
+  s_9f2b1bd9c8c29b::t_9827da2a8c878b 26,37
+  s_9f2b1bd9c8c29b::t_0579120126178c 12-15,27
+  s_9f2b1bd9c8c29b::t_e82aa6412f3908 23-25
+  h_0f977de3f043fc 54-56
+  s_9f2b1bd9c8c29b::t_9f9fa12aedb36f 8-9,11,22,40
+workflows/fee-shares-minter/offchain/workflow.test.ts
+  s_9f2b1bd9c8c29b::t_670e2a21be2551 13-16,18,64,68,75-94,98-99,106,109,113,117-122,130,133,138-139,144-149,153,156,160,167
+  s_9f2b1bd9c8c29b::t_daa64bad6d8ef5 17,137
+  s_9f2b1bd9c8c29b::t_a4f0880806c9f4 34
+workflows/fee-shares-minter/scripts/mocks/ConfigureAllHubs.s.sol
+  s_9f2b1bd9c8c29b::t_a74afe3ff423dd 1-5,7,10-13,17-24,27,33-44
+  s_9f2b1bd9c8c29b::t_5deee90d56b678 6,8-9,14-16,25-26,28-32
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "2be589e731c3b2881b4f4ac84ccc4a4e43ea034b",
+  "prompts": {},
+  "humans": {
+    "h_0f977de3f043fc": {
+      "author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  },
+  "sessions": {
+    "s_9f2b1bd9c8c29b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1cbc817c-07b2-4d00-b43b-6ba07813281c",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
