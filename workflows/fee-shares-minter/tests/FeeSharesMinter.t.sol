@@ -24,6 +24,7 @@ contract FeeSharesMinterTest is Test {
   address internal hub;
   uint256 internal constant ASSET_ID = 1;
   uint256 internal constant OTHER_ASSET_ID = 2;
+  uint256 internal constant THIRD_ASSET_ID = 3;
   uint256 internal constant ASSET_COUNT = 5;
 
   uint16 internal constant HAPPY_THRESHOLD_BPS = 5_00;
@@ -50,6 +51,10 @@ contract FeeSharesMinterTest is Test {
   function test_constructor_setsOwnerAndGuardian() public view {
     assertEq(minter.owner(), admin);
     assertEq(minter.guardian(), guardian);
+  }
+
+  function test_DISABLED_THRESHOLD_equalsUint16Max() public view {
+    assertEq(minter.DISABLED_THRESHOLD(), type(uint16).max);
   }
 
   function test_supportsInterface() public view {
@@ -139,12 +144,12 @@ contract FeeSharesMinterTest is Test {
     _setMinPercent(ASSET_ID, HAPPY_THRESHOLD_BPS);
 
     vm.expectEmit(address(minter));
-    emit IFeeSharesMinter.ConfigUpdated(hub, ASSET_ID, 0);
+    emit IFeeSharesMinter.ConfigUpdated(hub, ASSET_ID, minter.DISABLED_THRESHOLD());
 
     vm.prank(admin);
     minter.disableMinting(hub, ASSET_ID);
 
-    assertEq(minter.getConfig(hub, ASSET_ID), 0);
+    assertEq(minter.getConfig(hub, ASSET_ID), minter.DISABLED_THRESHOLD());
   }
 
   function test_disableMinting_byGuardian() public {
@@ -153,7 +158,7 @@ contract FeeSharesMinterTest is Test {
     vm.prank(guardian);
     minter.disableMinting(hub, ASSET_ID);
 
-    assertEq(minter.getConfig(hub, ASSET_ID), 0);
+    assertEq(minter.getConfig(hub, ASSET_ID), minter.DISABLED_THRESHOLD());
   }
 
   function test_disableMinting_revertsWith_NotOwnerOrGuardian() public {
@@ -170,21 +175,21 @@ contract FeeSharesMinterTest is Test {
     minter.disableMinting(hub, ASSET_ID);
     vm.stopPrank();
 
-    assertEq(minter.getConfig(hub, ASSET_ID), 0);
+    assertEq(minter.getConfig(hub, ASSET_ID), minter.DISABLED_THRESHOLD());
   }
 
   function test_disableMinting_onUnconfiguredAsset_doesNotRevert() public {
     vm.prank(admin);
     minter.disableMinting(hub, ASSET_ID);
 
-    assertEq(minter.getConfig(hub, ASSET_ID), 0);
+    assertEq(minter.getConfig(hub, ASSET_ID), minter.DISABLED_THRESHOLD());
   }
 
   function test_disableMinting_doesNotValidateAssetId() public {
     vm.prank(admin);
     minter.disableMinting(hub, ASSET_COUNT + 100);
 
-    assertEq(minter.getConfig(hub, ASSET_COUNT + 100), 0);
+    assertEq(minter.getConfig(hub, ASSET_COUNT + 100), minter.DISABLED_THRESHOLD());
   }
 
   function test_disableMinting_makesCanMintFalse() public {
@@ -195,6 +200,18 @@ contract FeeSharesMinterTest is Test {
     minter.disableMinting(hub, ASSET_ID);
 
     _assertCanMint(false);
+  }
+
+  function test_setConfig_reEnablesPreviouslyDisabledPair() public {
+    _setupHappyPath();
+
+    vm.prank(admin);
+    minter.disableMinting(hub, ASSET_ID);
+    _assertCanMint(false);
+
+    vm.prank(admin);
+    minter.setConfig(hub, ASSET_ID, HAPPY_THRESHOLD_BPS);
+    _assertCanMint(true);
   }
 
   function test_canMint_returnsTrue_onHappyPath() public {
@@ -235,17 +252,103 @@ contract FeeSharesMinterTest is Test {
     _assertCanMint(false);
   }
 
-  function test_checkUpkeep_mirrorsCanMint_andEchoesCheckData() public {
-    bytes memory checkData = abi.encode(hub, ASSET_ID);
-    (bool upkeepNeeded, bytes memory performData) = minter.checkUpkeep(checkData);
-    assertFalse(upkeepNeeded);
-    assertEq(performData, checkData);
+  function test_canMint_revertsWith_NotConfigured() public {
+    vm.expectRevert(abi.encodeWithSelector(IFeeSharesMinter.NotConfigured.selector, hub, ASSET_ID));
+    minter.canMint(hub, ASSET_ID);
+  }
 
+  function test_canMint_returnsFalse_whenDisabled_evenIfRatioExceedsSentinel() public {
     _setupHappyPath();
 
-    (upkeepNeeded, performData) = minter.checkUpkeep(checkData);
+    MockHubHelpers.setAddedAssets(hub, ASSET_ID, 1);
+    MockHubHelpers.setAccruedFees(hub, ASSET_ID, 10);
+    MockHubHelpers.setPreviewShares(hub, ASSET_ID, 10, 5);
+
+    vm.prank(admin);
+    minter.disableMinting(hub, ASSET_ID);
+
+    _assertCanMint(false);
+  }
+
+  function test_checkUpkeep_returnsAllMintable_whenAllPass() public {
+    _setupHappyPath();
+
+    bytes memory checkData = _encodePairs(_pairsOne(hub, ASSET_ID));
+    (bool upkeepNeeded, bytes memory performData) = minter.checkUpkeep(checkData);
     assertTrue(upkeepNeeded);
     assertEq(performData, checkData);
+  }
+
+  function test_checkUpkeep_returnsEmpty_whenInputEmpty() public view {
+    IFeeSharesMinter.HubAssetPair[] memory empty = new IFeeSharesMinter.HubAssetPair[](0);
+    (bool upkeepNeeded, bytes memory performData) = minter.checkUpkeep(abi.encode(empty));
+    assertFalse(upkeepNeeded);
+    assertEq(performData, abi.encode(empty));
+  }
+
+  function test_checkUpkeep_skipsUnconfigured() public view {
+    IFeeSharesMinter.HubAssetPair[] memory pairs = _pairsOne(hub, ASSET_ID);
+    (bool upkeepNeeded, bytes memory performData) = minter.checkUpkeep(abi.encode(pairs));
+    assertFalse(upkeepNeeded);
+    assertEq(performData, abi.encode(new IFeeSharesMinter.HubAssetPair[](0)));
+  }
+
+  function test_checkUpkeep_skipsDisabled() public {
+    _setupHappyPath();
+    vm.prank(admin);
+    minter.disableMinting(hub, ASSET_ID);
+
+    (bool upkeepNeeded, bytes memory performData) = minter.checkUpkeep(
+      abi.encode(_pairsOne(hub, ASSET_ID))
+    );
+    assertFalse(upkeepNeeded);
+    assertEq(performData, abi.encode(new IFeeSharesMinter.HubAssetPair[](0)));
+  }
+
+  function test_checkUpkeep_filtersToMintableSubset() public {
+    _setupHappyPath();
+    _setMinPercent(OTHER_ASSET_ID, HAPPY_THRESHOLD_BPS);
+    MockHubHelpers.setAddedAssets(hub, OTHER_ASSET_ID, HAPPY_ADDED);
+    MockHubHelpers.setAccruedFees(hub, OTHER_ASSET_ID, 1);
+    MockHubHelpers.setPreviewShares(hub, OTHER_ASSET_ID, 1, 1);
+
+    IFeeSharesMinter.HubAssetPair[] memory pairs = new IFeeSharesMinter.HubAssetPair[](3);
+    pairs[0] = IFeeSharesMinter.HubAssetPair(hub, ASSET_ID);
+    pairs[1] = IFeeSharesMinter.HubAssetPair(hub, OTHER_ASSET_ID);
+    pairs[2] = IFeeSharesMinter.HubAssetPair(hub, THIRD_ASSET_ID);
+
+    (bool upkeepNeeded, bytes memory performData) = minter.checkUpkeep(abi.encode(pairs));
+    assertTrue(upkeepNeeded);
+
+    IFeeSharesMinter.HubAssetPair[] memory mintable = abi.decode(
+      performData,
+      (IFeeSharesMinter.HubAssetPair[])
+    );
+    assertEq(mintable.length, 1);
+    assertEq(mintable[0].hub, hub);
+    assertEq(mintable[0].assetId, ASSET_ID);
+  }
+
+  function test_checkUpkeep_filtersAcrossMultipleHubs() public {
+    address otherHub = makeAddr('otherHub');
+    MockHubHelpers.setAssetCount(otherHub, 5);
+    _setupHappyPath();
+    _setupHappyPathOn(otherHub, ASSET_ID);
+
+    IFeeSharesMinter.HubAssetPair[] memory pairs = new IFeeSharesMinter.HubAssetPair[](2);
+    pairs[0] = IFeeSharesMinter.HubAssetPair(hub, ASSET_ID);
+    pairs[1] = IFeeSharesMinter.HubAssetPair(otherHub, ASSET_ID);
+
+    (bool upkeepNeeded, bytes memory performData) = minter.checkUpkeep(abi.encode(pairs));
+    assertTrue(upkeepNeeded);
+
+    IFeeSharesMinter.HubAssetPair[] memory mintable = abi.decode(
+      performData,
+      (IFeeSharesMinter.HubAssetPair[])
+    );
+    assertEq(mintable.length, 2);
+    assertEq(mintable[0].hub, hub);
+    assertEq(mintable[1].hub, otherHub);
   }
 
   function test_onReport_succeeds_whenAnyoneCalls() public {
@@ -253,7 +356,7 @@ contract FeeSharesMinterTest is Test {
     MockHubHelpers.expectMintFeeShares(hub, ASSET_ID);
 
     vm.prank(anyone);
-    minter.onReport(_arbitraryMetadata(), abi.encode(hub, ASSET_ID));
+    minter.onReport(_arbitraryMetadata(), abi.encode(_pairsOne(hub, ASSET_ID)));
   }
 
   function test_onReport_succeeds_withEmptyMetadata() public {
@@ -261,7 +364,7 @@ contract FeeSharesMinterTest is Test {
     MockHubHelpers.expectMintFeeShares(hub, ASSET_ID);
 
     vm.prank(anyone);
-    minter.onReport('', abi.encode(hub, ASSET_ID));
+    minter.onReport('', abi.encode(_pairsOne(hub, ASSET_ID)));
   }
 
   function test_onReport_ignoresMetadataContents() public {
@@ -274,30 +377,90 @@ contract FeeSharesMinterTest is Test {
       address(0xBEEF)
     );
     vm.prank(anyone);
-    minter.onReport(junk, abi.encode(hub, ASSET_ID));
+    minter.onReport(junk, abi.encode(_pairsOne(hub, ASSET_ID)));
   }
 
-  function test_onReport_revertsWith_ConditionsNotMet_whenDisabled() public {
+  function test_onReport_revertsWith_ConditionsNotMet_whenSingleDisabled() public {
     _setupHappyPath();
-    _assertCanMint(true);
-
     vm.prank(admin);
     minter.disableMinting(hub, ASSET_ID);
 
     vm.prank(anyone);
     vm.expectRevert(IFeeSharesMinter.ConditionsNotMet.selector);
-    minter.onReport('', abi.encode(hub, ASSET_ID));
+    minter.onReport('', abi.encode(_pairsOne(hub, ASSET_ID)));
   }
 
-  function test_onReport_revertsWith_ConditionsNotMet_whenThresholdRaisedAboveRatio() public {
+  function test_onReport_revertsWith_ConditionsNotMet_whenSingleBelowThreshold() public {
     _setupHappyPath();
-    _assertCanMint(true);
-
     _setMinPercent(ASSET_ID, 50_00);
 
     vm.prank(anyone);
     vm.expectRevert(IFeeSharesMinter.ConditionsNotMet.selector);
-    minter.onReport('', abi.encode(hub, ASSET_ID));
+    minter.onReport('', abi.encode(_pairsOne(hub, ASSET_ID)));
+  }
+
+  function test_onReport_revertsWith_ConditionsNotMet_whenInputEmpty() public {
+    vm.prank(anyone);
+    vm.expectRevert(IFeeSharesMinter.ConditionsNotMet.selector);
+    minter.onReport('', abi.encode(new IFeeSharesMinter.HubAssetPair[](0)));
+  }
+
+  function test_onReport_revertsWith_ConditionsNotMet_whenAllUnconfigured() public {
+    IFeeSharesMinter.HubAssetPair[] memory pairs = new IFeeSharesMinter.HubAssetPair[](2);
+    pairs[0] = IFeeSharesMinter.HubAssetPair(hub, ASSET_ID);
+    pairs[1] = IFeeSharesMinter.HubAssetPair(hub, OTHER_ASSET_ID);
+
+    vm.prank(anyone);
+    vm.expectRevert(IFeeSharesMinter.ConditionsNotMet.selector);
+    minter.onReport('', abi.encode(pairs));
+  }
+
+  function test_onReport_skipsStaleUnmintable_andMintsRest() public {
+    _setupHappyPath();
+    _setupHappyPathOn(hub, OTHER_ASSET_ID);
+    vm.prank(admin);
+    minter.disableMinting(hub, OTHER_ASSET_ID);
+
+    IFeeSharesMinter.HubAssetPair[] memory pairs = new IFeeSharesMinter.HubAssetPair[](2);
+    pairs[0] = IFeeSharesMinter.HubAssetPair(hub, ASSET_ID);
+    pairs[1] = IFeeSharesMinter.HubAssetPair(hub, OTHER_ASSET_ID);
+
+    MockHubHelpers.expectMintFeeShares(hub, ASSET_ID);
+
+    vm.prank(anyone);
+    minter.onReport('', abi.encode(pairs));
+  }
+
+  function test_onReport_mintsMultipleSameHub() public {
+    _setupHappyPath();
+    _setupHappyPathOn(hub, OTHER_ASSET_ID);
+
+    IFeeSharesMinter.HubAssetPair[] memory pairs = new IFeeSharesMinter.HubAssetPair[](2);
+    pairs[0] = IFeeSharesMinter.HubAssetPair(hub, ASSET_ID);
+    pairs[1] = IFeeSharesMinter.HubAssetPair(hub, OTHER_ASSET_ID);
+
+    MockHubHelpers.expectMintFeeShares(hub, ASSET_ID);
+    MockHubHelpers.expectMintFeeShares(hub, OTHER_ASSET_ID);
+
+    vm.prank(anyone);
+    minter.onReport('', abi.encode(pairs));
+  }
+
+  function test_onReport_mintsAcrossHubs() public {
+    address otherHub = makeAddr('otherHub');
+    MockHubHelpers.setAssetCount(otherHub, 5);
+    _setupHappyPath();
+    _setupHappyPathOn(otherHub, ASSET_ID);
+
+    IFeeSharesMinter.HubAssetPair[] memory pairs = new IFeeSharesMinter.HubAssetPair[](2);
+    pairs[0] = IFeeSharesMinter.HubAssetPair(hub, ASSET_ID);
+    pairs[1] = IFeeSharesMinter.HubAssetPair(otherHub, ASSET_ID);
+
+    MockHubHelpers.expectMintFeeShares(hub, ASSET_ID);
+    MockHubHelpers.expectMintFeeShares(otherHub, ASSET_ID);
+
+    vm.prank(anyone);
+    minter.onReport('', abi.encode(pairs));
   }
 
   function test_rescueToken_onlyOwner() public {
@@ -363,14 +526,33 @@ contract FeeSharesMinterTest is Test {
   }
 
   function _setupHappyPath() internal {
-    _setMinPercent(ASSET_ID, HAPPY_THRESHOLD_BPS);
-    MockHubHelpers.setAddedAssets(hub, ASSET_ID, HAPPY_ADDED);
-    MockHubHelpers.setAccruedFees(hub, ASSET_ID, HAPPY_FEES);
-    MockHubHelpers.setPreviewShares(hub, ASSET_ID, HAPPY_FEES, HAPPY_PREVIEW_SHARES);
+    _setupHappyPathOn(hub, ASSET_ID);
+  }
+
+  function _setupHappyPathOn(address h, uint256 assetId) internal {
+    vm.prank(admin);
+    minter.setConfig(h, assetId, HAPPY_THRESHOLD_BPS);
+    MockHubHelpers.setAddedAssets(h, assetId, HAPPY_ADDED);
+    MockHubHelpers.setAccruedFees(h, assetId, HAPPY_FEES);
+    MockHubHelpers.setPreviewShares(h, assetId, HAPPY_FEES, HAPPY_PREVIEW_SHARES);
   }
 
   function _assertCanMint(bool expected) internal view {
     assertEq(minter.canMint(hub, ASSET_ID), expected);
+  }
+
+  function _pairsOne(
+    address h,
+    uint256 aid
+  ) internal pure returns (IFeeSharesMinter.HubAssetPair[] memory pairs) {
+    pairs = new IFeeSharesMinter.HubAssetPair[](1);
+    pairs[0] = IFeeSharesMinter.HubAssetPair(h, aid);
+  }
+
+  function _encodePairs(
+    IFeeSharesMinter.HubAssetPair[] memory pairs
+  ) internal pure returns (bytes memory) {
+    return abi.encode(pairs);
   }
 
   function _arbitraryMetadata() internal pure returns (bytes memory) {

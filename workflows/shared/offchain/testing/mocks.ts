@@ -29,9 +29,22 @@ export const CHECK_UPKEEP_SELECTOR = toFunctionSelector(
 
 export type CallContractInput = {call: {data: Uint8Array; to: Uint8Array}};
 
+export type HubAssetPair = {hub: Hex; assetId: bigint};
+
+const ASSET_REF_ARRAY_TYPE = parseAbiParameters('(address hub, uint256 assetId)[]');
+
+export function encodePairs(pairs: HubAssetPair[]): Hex {
+  return encodeAbiParameters(ASSET_REF_ARRAY_TYPE, [pairs]);
+}
+
+export function decodePairs(data: Hex): HubAssetPair[] {
+  const [pairs] = decodeAbiParameters(ASSET_REF_ARRAY_TYPE, data);
+  return pairs as unknown as HubAssetPair[];
+}
+
 export function dispatchCallContract(handlers: {
   getAssetCount?: () => bigint;
-  checkUpkeep?: (assetId: bigint, checkData: Hex) => {upkeepNeeded: boolean; performData: Hex};
+  checkUpkeep?: (pairs: HubAssetPair[]) => {upkeepNeeded: boolean; mintable: HubAssetPair[]};
 }) {
   return (req: CallContractInput): {data: Uint8Array} => {
     const data = ('0x' +
@@ -45,9 +58,9 @@ export function dispatchCallContract(handlers: {
     }
     if (selector === CHECK_UPKEEP_SELECTOR && handlers.checkUpkeep) {
       const [checkData] = decodeFunctionData({abi: IAaveCREReceiverABI, data}).args as [Hex];
-      const [, assetId] = decodeAbiParameters(parseAbiParameters('address, uint256'), checkData);
-      const {upkeepNeeded, performData} = handlers.checkUpkeep(assetId, checkData);
-      return {data: encodeCheckUpkeepResult(upkeepNeeded, performData)};
+      const pairs = decodePairs(checkData);
+      const {upkeepNeeded, mintable} = handlers.checkUpkeep(pairs);
+      return {data: encodeCheckUpkeepResult(upkeepNeeded, encodePairs(mintable))};
     }
     throw new Error(`dispatchCallContract: unmocked selector ${selector}`);
   };

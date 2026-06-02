@@ -7,8 +7,12 @@ import {GovernanceV3Ethereum} from 'aave-address-book/GovernanceV3Ethereum.sol';
 
 import {FeeSharesMinter} from '../src/FeeSharesMinter.sol';
 
-abstract contract BaseDeploy is Script {
-  function _run(address owner, address guardian) internal returns (address) {
+// make deploy-fee-shares-minter env=Mainnet [dry=1]
+// make deploy-fee-shares-minter env=Devnet  [dry=1]
+contract DeployFeeSharesMinter is Script {
+  function run() external returns (address) {
+    address owner = GovernanceV3Ethereum.EXECUTOR_LVL_1;
+    address guardian = GovernanceV3Ethereum.GOVERNANCE_GUARDIAN;
     require(owner != address(0), 'invalid owner');
     require(guardian != address(0), 'invalid guardian');
     vm.startBroadcast();
@@ -18,23 +22,5 @@ abstract contract BaseDeploy is Script {
     console.log('Owner:', owner);
     console.log('Guardian:', guardian);
     return address(minter);
-  }
-}
-
-// make deploy-mainnet-fee-shares-minter-dry  # simulate
-// make deploy-mainnet-fee-shares-minter      # broadcast
-contract DeployMainnet is BaseDeploy {
-  function run() external returns (address) {
-    return _run(GovernanceV3Ethereum.EXECUTOR_LVL_1, GovernanceV3Ethereum.GOVERNANCE_GUARDIAN);
-  }
-}
-
-// make deploy-sepolia-fee-shares-minter-dry  # simulate (requires SEPOLIA_OWNER in .env)
-// make deploy-sepolia-fee-shares-minter      # broadcast
-contract DeploySepolia is BaseDeploy {
-  function run() external returns (address) {
-    address owner = vm.envAddress('SEPOLIA_OWNER');
-    address guardian = vm.envOr('SEPOLIA_GUARDIAN', owner);
-    return _run(owner, guardian);
   }
 }

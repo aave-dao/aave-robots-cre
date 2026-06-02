@@ -1,10 +1,10 @@
 {
-  "schedule": "0 11 * * *",
+  "schedule": "*/2 * * * *",
   "evms": [
     {
       "chainName": "ethereum-mainnet",
       "isTestnet": false,
-      "minter": ""
+      "minter": "0x5459F1d41358f85E9c073152dEbA33D9c3aB0BF1"
     }
   ]
 }

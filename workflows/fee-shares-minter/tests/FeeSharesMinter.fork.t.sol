@@ -60,11 +60,11 @@ contract FeeSharesMinterForkTest is Test {
     assertEq(minter.getConfig(address(hub), 0), 1);
 
     vm.expectEmit(address(minter));
-    emit IFeeSharesMinter.ConfigUpdated(address(hub), 0, 0);
+    emit IFeeSharesMinter.ConfigUpdated(address(hub), 0, minter.DISABLED_THRESHOLD());
 
     vm.prank(guardian);
     minter.disableMinting(address(hub), 0);
-    assertEq(minter.getConfig(address(hub), 0), 0);
+    assertEq(minter.getConfig(address(hub), 0), minter.DISABLED_THRESHOLD());
   }
 
   function test_fork_setConfig_revertsForUnlistedAsset() public {
@@ -74,13 +74,27 @@ contract FeeSharesMinterForkTest is Test {
     minter.setConfig(address(hub), assetCount, 1);
   }
 
-  function test_fork_onReport_revertsWith_ConditionsNotMet_whenUnconfigured() public {
+  function test_fork_canMint_revertsWith_NotConfigured() public {
     uint256 assetId = 0;
-    assertFalse(minter.canMint(address(hub), assetId));
 
+    vm.expectRevert(
+      abi.encodeWithSelector(IFeeSharesMinter.NotConfigured.selector, address(hub), assetId)
+    );
+    minter.canMint(address(hub), assetId);
+  }
+
+  function test_fork_checkUpkeep_skipsUnconfigured() public view {
+    (bool upkeepNeeded, bytes memory performData) = minter.checkUpkeep(
+      abi.encode(_pairsOne(address(hub), 0))
+    );
+    assertFalse(upkeepNeeded);
+    assertEq(performData, abi.encode(new IFeeSharesMinter.HubAssetPair[](0)));
+  }
+
+  function test_fork_onReport_revertsWith_ConditionsNotMet_whenUnconfigured() public {
     vm.prank(anyone);
     vm.expectRevert(IFeeSharesMinter.ConditionsNotMet.selector);
-    minter.onReport('', abi.encode(address(hub), assetId));
+    minter.onReport('', abi.encode(_pairsOne(address(hub), 0)));
   }
 
   function test_fork_onReport_succeeds_permissionlessly_whenMintable() public {
@@ -93,11 +107,10 @@ contract FeeSharesMinterForkTest is Test {
     minter.setConfig(address(hub), assetId, threshold);
 
     assertTrue(minter.canMint(address(hub), assetId));
-    (bool upkeepNeeded, bytes memory performData) = minter.checkUpkeep(
-      abi.encode(address(hub), assetId)
-    );
+    bytes memory checkData = abi.encode(_pairsOne(address(hub), assetId));
+    (bool upkeepNeeded, bytes memory performData) = minter.checkUpkeep(checkData);
     assertTrue(upkeepNeeded);
-    assertEq(performData, abi.encode(address(hub), assetId));
+    assertEq(performData, checkData);
 
     uint256 expectedFees = hub.getAssetAccruedFees(assetId);
     uint256 expectedShares = hub.previewAddByAssets(assetId, expectedFees);
@@ -107,9 +120,17 @@ contract FeeSharesMinterForkTest is Test {
     emit IHub.MintFeeShares(assetId, expectedFeeReceiver, expectedShares, expectedFees);
 
     vm.prank(anyone);
-    minter.onReport('', abi.encode(address(hub), assetId));
+    minter.onReport('', performData);
 
     assertFalse(minter.canMint(address(hub), assetId));
+  }
+
+  function _pairsOne(
+    address h,
+    uint256 aid
+  ) internal pure returns (IFeeSharesMinter.HubAssetPair[] memory pairs) {
+    pairs = new IFeeSharesMinter.HubAssetPair[](1);
+    pairs[0] = IFeeSharesMinter.HubAssetPair(h, aid);
   }
 
   function _findMintableAsset()

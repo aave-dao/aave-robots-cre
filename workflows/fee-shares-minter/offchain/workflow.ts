@@ -7,6 +7,7 @@ import {
   type Runtime,
 } from '@chainlink/cre-sdk';
 import {
+  decodeAbiParameters,
   decodeEventLog,
   decodeFunctionResult,
   encodeAbiParameters,
@@ -17,11 +18,14 @@ import {
 } from 'viem';
 import {shouldSubmit, submitReport} from '../../shared/offchain/checkUpkeep';
 import {IHubABI} from '../../shared/offchain/abi/IHub';
+import {hubsFor} from '../../shared/offchain/addresses';
 import {type Config, type NetworkConfig, type Target, configSchema} from './types';
 
 export {configSchema};
 
 type EvmClient = InstanceType<typeof cre.capabilities.EVMClient>;
+
+type HubAssetPair = {hub: Hex; assetId: bigint};
 
 type MintFeeSharesArgs = {
   assetId: bigint;
@@ -32,18 +36,18 @@ type MintFeeSharesArgs = {
 
 type TargetResult = {minted: number; skipped: number; assetCount: bigint};
 
-function encodeCheckData(hub: string, assetId: bigint): Hex {
-  return encodeAbiParameters(parseAbiParameters('address hub, uint256 assetId'), [
-    hub as Hex,
-    assetId,
-  ]);
+const ASSET_REF_ARRAY_TYPE = parseAbiParameters('(address hub, uint256 assetId)[]');
+
+function encodePairs(pairs: HubAssetPair[]): Hex {
+  return encodeAbiParameters(ASSET_REF_ARRAY_TYPE, [pairs]);
 }
 
-function readAssetCount(
-  runtime: Runtime<Config>,
-  evmClient: EvmClient,
-  hub: string,
-): bigint {
+function decodePairs(data: Hex): HubAssetPair[] {
+  const [pairs] = decodeAbiParameters(ASSET_REF_ARRAY_TYPE, data);
+  return pairs as unknown as HubAssetPair[];
+}
+
+function readAssetCount(runtime: Runtime<Config>, evmClient: EvmClient, hub: string): bigint {
   const calldata = encodeFunctionData({abi: IHubABI, functionName: 'getAssetCount', args: []});
   const reply = evmClient
     .callContract(runtime, {
@@ -57,14 +61,15 @@ function readAssetCount(
   }) as bigint;
 }
 
-function findMintFeeSharesEvent(
+function findMintFeeSharesEvents(
   runtime: Runtime<Config>,
   evmClient: EvmClient,
   txHash: string,
   hub: string,
-): {hub: Hex; args: MintFeeSharesArgs} | null {
+): Map<string, MintFeeSharesArgs> {
+  const events = new Map<string, MintFeeSharesArgs>();
   const {receipt} = evmClient.getTransactionReceipt(runtime, {hash: txHash}).result();
-  if (!receipt) return null;
+  if (!receipt) return events;
 
   const hubLower = hub.toLowerCase();
   for (const log of receipt.logs) {
@@ -77,13 +82,14 @@ function findMintFeeSharesEvent(
         data: bytesToHex(log.data),
       });
       if (decoded.eventName === 'MintFeeShares') {
-        return {hub: logAddr as Hex, args: decoded.args as unknown as MintFeeSharesArgs};
+        const args = decoded.args as unknown as MintFeeSharesArgs;
+        events.set(args.assetId.toString(), args);
       }
     } catch {
       // log doesn't match any event in IHubABI — skip
     }
   }
-  return null;
+  return events;
 }
 
 export function runForTarget(
@@ -97,40 +103,47 @@ export function runForTarget(
 
   const assetCount = readAssetCount(runtime, evmClient, target.hub);
   runtime.log(`[${label}] assetCount=${assetCount}`);
+  if (assetCount === 0n) {
+    return {minted: 0, skipped: 0, assetCount};
+  }
 
-  let minted = 0;
-  let skipped = 0;
+  const allPairs: HubAssetPair[] = [];
   for (let assetId = 0n; assetId < assetCount; assetId++) {
-    const sublabel = `${label}:asset=${assetId}`;
-    const checkData = encodeCheckData(target.hub, assetId);
-    const performData = shouldSubmit(runtime, evmClient, target.minter, checkData, sublabel);
-    if (!performData) {
-      skipped++;
-      continue;
-    }
+    allPairs.push({hub: target.hub as Hex, assetId});
+  }
 
-    const txHash = submitReport(runtime, evmClient, target.minter, performData, sublabel);
-    if (!txHash) {
-      skipped++;
-      continue;
-    }
+  const performData = shouldSubmit(runtime, evmClient, target.minter, encodePairs(allPairs), label);
+  if (!performData) {
+    return {minted: 0, skipped: Number(assetCount), assetCount};
+  }
 
-    const event = findMintFeeSharesEvent(runtime, evmClient, txHash, target.hub);
+  const mintablePairs = decodePairs(performData);
+  runtime.log(`[${label}] mintable=${mintablePairs.length}/${assetCount}`);
+
+  const txHash = submitReport(runtime, evmClient, target.minter, performData, label);
+  if (!txHash) {
+    return {minted: 0, skipped: Number(assetCount), assetCount};
+  }
+
+  const events = findMintFeeSharesEvents(runtime, evmClient, txHash, target.hub);
+  for (const pair of mintablePairs) {
+    const sublabel = `${label}:asset=${pair.assetId}`;
+    const event = events.get(pair.assetId.toString());
     if (event) {
       runtime.log(
         `[${sublabel}] MintFeeShares` +
-          ` | feeReceiver=${event.args.feeReceiver}` +
-          ` | shares=${event.args.shares}` +
-          ` | assets=${event.args.assets}` +
+          ` | feeReceiver=${event.feeReceiver}` +
+          ` | shares=${event.shares}` +
+          ` | assets=${event.assets}` +
           ` | tx=${txHash}`,
       );
     } else {
-      runtime.log(`[${sublabel}] tx ${txHash} succeeded but no MintFeeShares event found`);
+      runtime.log(`[${sublabel}] in mintable set but no MintFeeShares event found in tx ${txHash}`);
     }
-    minted++;
   }
 
-  return {minted, skipped, assetCount};
+  const minted = events.size;
+  return {minted, skipped: Number(assetCount) - minted, assetCount};
 }
 
 export const createTargetHandler = (network: NetworkConfig, target: Target) => {
@@ -158,12 +171,15 @@ export const createTargetHandler = (network: NetworkConfig, target: Target) => {
 };
 
 export const initWorkflow = (config: Config) => {
-  const trigger = new cre.capabilities.CronCapability().trigger({schedule: config.schedule});
+  const cron = new cre.capabilities.CronCapability();
   return config.evms
-    .filter((net) => net.chainName && net.targets.length > 0)
+    .filter((net) => net.chainName && net.minter)
     .flatMap((net) =>
-      net.targets
-        .filter((t) => t.minter && t.hub)
-        .map((t) => handler(trigger, createTargetHandler(net, t))),
+      hubsFor(net.chainName).map((hub) =>
+        handler(
+          cron.trigger({schedule: config.schedule}),
+          createTargetHandler(net, {minter: net.minter, hub}),
+        ),
+      ),
     );
 };

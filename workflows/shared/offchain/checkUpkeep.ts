@@ -26,12 +26,18 @@ export function shouldSubmit<TConfig>(
     functionName: 'checkUpkeep',
     args: [checkData],
   });
-  const call = evmClient
-    .callContract(runtime, {
-      call: encodeCallMsg({from: zeroAddress, to: robotAddress as Hex, data: calldata}),
-    })
-    .result();
-  const data = bytesToHex(call.data);
+  let data: Hex;
+  try {
+    const call = evmClient
+      .callContract(runtime, {
+        call: encodeCallMsg({from: zeroAddress, to: robotAddress as Hex, data: calldata}),
+      })
+      .result();
+    data = bytesToHex(call.data);
+  } catch (e) {
+    runtime.log(`[${label}] checkUpkeep reverted — skipping: ${e}`);
+    return null;
+  }
   if (data === '0x') {
     runtime.log(`[${label}] checkUpkeep returned empty data — skipping`);
     return null;

@@ -17,8 +17,8 @@ test-offchain-fee-shares-minter :; cd workflows/fee-shares-minter/offchain && np
 # `cast wallet import <name>` first, then set ACCOUNT_NAME in .env.
 deploy-account :; forge script ${contract} --rpc-url ${chain} --account ${ACCOUNT_NAME} -vvvv --slow $(if ${dry},,--verify --broadcast)
 
-deploy-mainnet-fee-shares-minter :; make deploy-account contract=workflows/fee-shares-minter/scripts/DeployFeeSharesMinter.s.sol:DeployMainnet chain=mainnet
-deploy-mainnet-fee-shares-minter-dry :; make deploy-account contract=workflows/fee-shares-minter/scripts/DeployFeeSharesMinter.s.sol:DeployMainnet chain=mainnet dry=1
+DEPLOY_CHAIN_Mainnet := mainnet
+DEPLOY_CHAIN_Devnet := tenderly_devnet
 
-deploy-sepolia-fee-shares-minter :; make deploy-account contract=workflows/fee-shares-minter/scripts/DeployFeeSharesMinter.s.sol:DeploySepolia chain=sepolia
-deploy-sepolia-fee-shares-minter-dry :; make deploy-account contract=workflows/fee-shares-minter/scripts/DeployFeeSharesMinter.s.sol:DeploySepolia chain=sepolia dry=1
+deploy-fee-shares-minter :; @[ -n "$(DEPLOY_CHAIN_${env})" ] || { echo "ERROR: pass 'env=Mainnet' or 'env=Devnet'"; exit 1; }; \
+	make deploy-account contract=workflows/fee-shares-minter/scripts/DeployFeeSharesMinter.s.sol:DeployFeeSharesMinter chain=$(DEPLOY_CHAIN_${env}) dry=${dry}

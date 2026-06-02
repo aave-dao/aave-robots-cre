@@ -6,8 +6,10 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "bun test",
-    "simulate:staging": "cre workflow simulate ./fee-shares-minter/offchain --project-root=../.. --env=../../../.env --target=staging-settings --non-interactive --trigger-index=0",
-    "simulate:production": "cre workflow simulate ./fee-shares-minter/offchain --project-root=../.. --env=../../../.env --target=production-settings --non-interactive --trigger-index=0"
+    "simulate:devnet": "cre workflow simulate ./fee-shares-minter/offchain --project-root=../.. --env=../../../.env --target=devnet-settings --non-interactive --trigger-index=0",
+    "simulate:production": "cre workflow simulate ./fee-shares-minter/offchain --project-root=../.. --env=../../../.env --target=production-settings --non-interactive --trigger-index=0",
+    "deploy:devnet": "cre workflow deploy ./fee-shares-minter/offchain --project-root=../.. --env=../../../.env --target=devnet-settings",
+    "deploy:production": "cre workflow deploy ./fee-shares-minter/offchain --project-root=../.. --env=../../../.env --target=production-settings"
   },
   "license": "UNLICENSED",
   "dependencies": {

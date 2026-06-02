@@ -1,15 +1,9 @@
 import {z} from 'zod';
 
-export const targetSchema = z.object({
-  minter: z.string(),
-  hub: z.string(),
-});
-export type Target = z.infer<typeof targetSchema>;
-
 export const networkSchema = z.object({
   chainName: z.string(),
   isTestnet: z.boolean().default(false),
-  targets: z.array(targetSchema),
+  minter: z.string(),
 });
 export type NetworkConfig = z.infer<typeof networkSchema>;
 
@@ -18,3 +12,5 @@ export const configSchema = z.object({
   evms: z.array(networkSchema),
 });
 export type Config = z.infer<typeof configSchema>;
+
+export type Target = {minter: string; hub: string};

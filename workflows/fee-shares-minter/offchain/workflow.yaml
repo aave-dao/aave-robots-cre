@@ -1,12 +1,12 @@
 # ==========================================================================
 # CRE WORKFLOW SETTINGS — FeeSharesMinter
 # ==========================================================================
-staging-settings:
+devnet-settings:
   user-workflow:
-    workflow-name: "fee-shares-minter-staging"
+    workflow-name: "fee-shares-minter-devnet"
   workflow-artifacts:
     workflow-path: "./main.ts"
-    config-path: "./config.staging.json"
+    config-path: "./config.devnet.json"
     secrets-path: ""
 
 # ==========================================================================

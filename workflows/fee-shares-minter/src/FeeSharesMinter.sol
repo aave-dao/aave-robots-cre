@@ -17,6 +17,9 @@ import {IFeeSharesMinter} from './IFeeSharesMinter.sol';
 contract FeeSharesMinter is IFeeSharesMinter, OwnableWithGuardian, Rescuable {
   using PercentageMath for uint256;
 
+  /// @inheritdoc IFeeSharesMinter
+  uint16 public constant override DISABLED_THRESHOLD = type(uint16).max;
+
   mapping(address hub => mapping(uint256 assetId => uint16)) internal _minAccruedFeesPercent;
 
   /// @dev Constructor.
@@ -33,10 +36,7 @@ contract FeeSharesMinter is IFeeSharesMinter, OwnableWithGuardian, Rescuable {
     uint256 assetId,
     uint16 minAccruedFeesPercent
   ) external onlyOwner {
-    require(
-      minAccruedFeesPercent > 0 && minAccruedFeesPercent <= PercentageMath.PERCENTAGE_FACTOR,
-      InvalidConfig(minAccruedFeesPercent)
-    );
+    require(_isActiveThreshold(minAccruedFeesPercent), InvalidConfig(minAccruedFeesPercent));
     require(assetId < IHub(hub).getAssetCount(), IHub.AssetNotListed());
     _minAccruedFeesPercent[hub][assetId] = minAccruedFeesPercent;
     emit ConfigUpdated(hub, assetId, minAccruedFeesPercent);
@@ -44,8 +44,8 @@ contract FeeSharesMinter is IFeeSharesMinter, OwnableWithGuardian, Rescuable {
 
   /// @inheritdoc IFeeSharesMinter
   function disableMinting(address hub, uint256 assetId) external onlyOwnerOrGuardian {
-    _minAccruedFeesPercent[hub][assetId] = 0;
-    emit ConfigUpdated(hub, assetId, 0);
+    _minAccruedFeesPercent[hub][assetId] = DISABLED_THRESHOLD;
+    emit ConfigUpdated(hub, assetId, DISABLED_THRESHOLD);
   }
 
   /// @inheritdoc IReceiver
@@ -54,18 +54,31 @@ contract FeeSharesMinter is IFeeSharesMinter, OwnableWithGuardian, Rescuable {
   /// per-asset threshold, the hub's role check, and the round-to-non-zero guard
   /// in `_canMint`.
   function onReport(bytes calldata /* metadata */, bytes calldata report) external override {
-    (address hub, uint256 assetId) = abi.decode(report, (address, uint256));
-    require(_canMint(hub, assetId), ConditionsNotMet());
-    IHub(hub).mintFeeShares(assetId);
+    HubAssetPair[] memory pairs = abi.decode(report, (HubAssetPair[]));
+    uint256 minted = 0;
+    for (uint256 i = 0; i < pairs.length; i++) {
+      if (!_canMint(pairs[i].hub, pairs[i].assetId)) continue;
+      IHub(pairs[i].hub).mintFeeShares(pairs[i].assetId);
+      minted++;
+    }
+    require(minted > 0, ConditionsNotMet());
   }
 
   /// @inheritdoc IAaveCREReceiver
   function checkUpkeep(
     bytes calldata checkData
   ) external view returns (bool upkeepNeeded, bytes memory performData) {
-    (address hub, uint256 assetId) = abi.decode(checkData, (address, uint256));
-    upkeepNeeded = _canMint(hub, assetId);
-    performData = checkData;
+    HubAssetPair[] memory pairs = abi.decode(checkData, (HubAssetPair[]));
+    HubAssetPair[] memory buffer = new HubAssetPair[](pairs.length);
+    uint256 count = 0;
+    for (uint256 i = 0; i < pairs.length; i++) {
+      if (_canMint(pairs[i].hub, pairs[i].assetId)) {
+        buffer[count++] = pairs[i];
+      }
+    }
+    HubAssetPair[] memory mintable = new HubAssetPair[](count);
+    for (uint256 i = 0; i < count; i++) mintable[i] = buffer[i];
+    return (count > 0, abi.encode(mintable));
   }
 
   /// @inheritdoc IFeeSharesMinter
@@ -75,6 +88,7 @@ contract FeeSharesMinter is IFeeSharesMinter, OwnableWithGuardian, Rescuable {
 
   /// @inheritdoc IFeeSharesMinter
   function canMint(address hub, uint256 assetId) external view returns (bool) {
+    require(_minAccruedFeesPercent[hub][assetId] != 0, NotConfigured(hub, assetId));
     return _canMint(hub, assetId);
   }
 
@@ -88,7 +102,7 @@ contract FeeSharesMinter is IFeeSharesMinter, OwnableWithGuardian, Rescuable {
 
   function _canMint(address hub, uint256 assetId) internal view virtual returns (bool) {
     uint16 minAccruedFeesPercent = _minAccruedFeesPercent[hub][assetId];
-    if (minAccruedFeesPercent == 0) return false;
+    if (!_isActiveThreshold(minAccruedFeesPercent)) return false;
 
     IHub targetHub = IHub(hub);
     uint256 accruedFees = targetHub.getAssetAccruedFees(assetId);
@@ -98,6 +112,10 @@ contract FeeSharesMinter is IFeeSharesMinter, OwnableWithGuardian, Rescuable {
     if (accruedFees.percentDivDown(totalAddedAssets) < minAccruedFeesPercent) return false;
 
     return targetHub.previewAddByAssets(assetId, accruedFees) > 0;
+  }
+
+  function _isActiveThreshold(uint16 minAccruedFeesPercent) internal pure returns (bool) {
+    return minAccruedFeesPercent > 0 && minAccruedFeesPercent <= PercentageMath.PERCENTAGE_FACTOR;
   }
 
   /// @inheritdoc Rescuable

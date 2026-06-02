@@ -15,6 +15,7 @@
     "main.ts",
     "workflow.ts",
     "types.ts",
-    "../../shared/offchain/**/*.ts"
+    "../../shared/offchain/**/*.ts",
+    "../../../lib/aave-helpers/lib/aave-address-book/src/ts/AaveV4Ethereum.ts"
   ]
 }

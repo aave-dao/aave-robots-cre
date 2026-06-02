@@ -14,7 +14,7 @@ evm_version = 'cancun'
 
 [rpc_endpoints]
 mainnet = "${RPC_MAINNET}"
-sepolia = "${RPC_SEPOLIA}"
+tenderly_devnet = "${RPC_TENDERLY_DEVNET}"
 optimism = "${RPC_OPTIMISM}"
 avalanche = "${RPC_AVALANCHE}"
 polygon = "${RPC_POLYGON}"
@@ -26,7 +26,6 @@ scroll = "${RPC_SCROLL}"
 
 [etherscan]
 mainnet = { key = "${ETHERSCAN_API_KEY}", chain = 1 }
-sepolia = { key = "${ETHERSCAN_API_KEY}", chain = 11155111 }
 optimism = { key = "${ETHERSCAN_API_KEY}", chain = 10 }
 avalanche = { key = "${ETHERSCAN_API_KEY}", chain = 43114 }
 polygon = { key = "${ETHERSCAN_API_KEY}", chain = 137 }
