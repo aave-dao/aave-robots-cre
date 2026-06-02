@@ -1,0 +1,24 @@
+workflows/fee-shares-minter/scripts/devnet/ConfigureAllHubs.s.sol
+  s_9f2b1bd9c8c29b::t_b4408aef1aadce 18
+workflows/fee-shares-minter/offchain/workflow.test.ts
+  s_9f2b1bd9c8c29b::t_ff1687a989627b 172-212
+  s_9f2b1bd9c8c29b::t_6acd0538c7b7c9 19-20
+workflows/fee-shares-minter/tests/FeeSharesMinter.t.sol
+  s_9f2b1bd9c8c29b::t_e79264ef672e3f 56-59
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "282264d5f82f3802fc70e0b1c54a65bda933b0e1",
+  "prompts": {},
+  "sessions": {
+    "s_9f2b1bd9c8c29b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1cbc817c-07b2-4d00-b43b-6ba07813281c",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
