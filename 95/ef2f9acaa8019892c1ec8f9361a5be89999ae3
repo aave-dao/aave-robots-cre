@@ -1,0 +1,95 @@
+workflows/shared/tests/AaveCREOperator.t.sol
+  s_a5372f0a8282f4::t_ea999430effb48 1-6
+Makefile
+  s_a5372f0a8282f4::t_51699c86db4713 29-31
+  s_a5372f0a8282f4::t_6548d6085c912a 18,23-26,28,32
+workflows/shared/tests/AaveCREOperator.fork.t.sol
+  s_a5372f0a8282f4::t_a0c2bcda0a2827 1-19
+foundry.toml
+  s_a5372f0a8282f4::t_4e4d717bcc1288 16-18
+  s_a5372f0a8282f4::t_0b43b6d1d9bb5e 20-21
+  s_a5372f0a8282f4::t_8aab8393c70e22 24-25
+  s_a5372f0a8282f4::t_5ca102a48e2479 14-15,19,22
+workflows/shared/src/AaveCREOperator.sol
+  s_a5372f0a8282f4::t_d040aa6bb8fc93 36-46,48-56
+  s_a5372f0a8282f4::t_fe2ed0a81cca34 12-13,27-35,47,61-76,80-84,88-89,93-97,101-102
+  s_a5372f0a8282f4::t_cd72db484cd664 1-11,15-26,57-60,77-79,85-87,90-92,98-100,103-120
+  h_0f977de3f043fc 14
+workflows/shared/offchain/package.json
+  s_a5372f0a8282f4::t_40d974de55de9a 6,9
+  h_0f977de3f043fc 7-8
+workflows/fee-shares-minter/scripts/devnet/ConfigureAllHubs.s.sol
+  h_0f977de3f043fc 22
+workflows/shared/src/IWorkflowRegistry.sol
+  s_a5372f0a8282f4::t_2ee74861efea24 65-68
+  s_a5372f0a8282f4::t_95e61a24028584 1,6-8,14-19,38,41,47-48,52,56,61,69,83
+  s_a5372f0a8282f4::t_98efd943414709 2-5,9-13,20-37,39-40,42-46,49-51,53-55,57-60,62-64,70-82
+README.md
+  s_a5372f0a8282f4::t_b97aa98c467e9d 57,59-60,62,64-65,68-73
+  s_a5372f0a8282f4::t_c1b861908446eb 67
+  s_a5372f0a8282f4::t_c95882b8dfbe65 66
+  s_a5372f0a8282f4::t_b417a614d47905 55-56,58,61,63,74-78
+  s_a5372f0a8282f4::t_c2b8ac32b19f39 9-10,44
+  s_a5372f0a8282f4::t_932c8641eb42ae 23-29
+workflows/shared/scripts/devnet/LinkOperatorDevnet.s.sol
+  s_a5372f0a8282f4::t_7da10a68c374e5 1-5,7,9,19,22,27-28,30-31
+  h_0f977de3f043fc 20-21
+  s_a5372f0a8282f4::t_622186c885ef02 6,8,10-18,23-26,29
+workflows/fee-shares-minter/offchain/package.json
+  s_a5372f0a8282f4::t_12668c5ed7c5ef 12-20
+workflows/fee-shares-minter/offchain/config.devnet.json
+  h_0f977de3f043fc 7
+.gitignore
+  s_a5372f0a8282f4::t_85fef6b172c93f 11-12,14-16
+workflows/shared/src/IAaveCREOperator.sol
+  s_a5372f0a8282f4::t_2ee74861efea24 70-73
+  s_a5372f0a8282f4::t_4c83e891970d26 1-8,13,18-25,53-54,57,62,74-75,88-95
+  s_a5372f0a8282f4::t_48b805f060bb66 9-12,14-17,26-32,55-56,58-61,63-69,76-87
+  s_a5372f0a8282f4::t_0cd83a0b76ec98 33-52
+workflows/shared/scripts/DeployAaveCREOperator.s.sol
+  s_a5372f0a8282f4::t_c52397c7b5729c 1-9,12,17-19,22-24,26-28,30-37
+  s_a5372f0a8282f4::t_8155a1c497c749 15
+  s_a5372f0a8282f4::t_138d7aedfba0d4 10-11,13-14,16,20
+  h_0f977de3f043fc 21,25,29
+workflows/shared/tests/helpers/MockWorkflowRegistry.sol
+  s_a5372f0a8282f4::t_2ee74861efea24 128-131,177-180
+  s_a5372f0a8282f4::t_3bff6cd6745e12 9,11,15-20,22-27,30-36,38-39,42-43,46-47,50-54,56-57,59-60,62-63,65-125,132-135,138-139,144-147,151-160,163-166,169-172,175-176,183-184
+  s_a5372f0a8282f4::t_57b87bba9ce351 1-8,10,12-14,21,28-29,37,40-41,44-45,48-49,55,58,61,64,126-127,136-137,149-150,161-162,167-168,173-174,181-182,185-186
+  s_a5372f0a8282f4::t_15160fa82ad2b6 140-143,148
+workflows/shared/tests/AaveCREOperatorTestBase.sol
+  s_a5372f0a8282f4::t_ea24429451f89a 62
+  s_a5372f0a8282f4::t_7dd77982b798ff 114
+  s_a5372f0a8282f4::t_17e6225e8a875f 381,384,388-399
+  s_a5372f0a8282f4::t_fadd06d6afed2c 108
+  s_a5372f0a8282f4::t_90f6b3884bd27a 23-24,26,39-43,63-64,66-70,72-73,75,78,80-85,87-88,91,94,97,100,103,106,111,113,118,121,124,127,133,136,139,142,148,153,159,162-165,168-192,195,198,204,206,210,213-234,238,241,243,248,250,256,259,261,265,268,271-289,292-297,300,303,375,377,380
+  s_a5372f0a8282f4::t_7e6f817d11fad5 382-383,385-387
+  s_a5372f0a8282f4::t_ca3179af17d51d 105,107,126,128-129,141,143-144,197,199-200,242,244-245,249,251-252
+  s_a5372f0a8282f4::t_ac92a7eef0848c 86
+  s_a5372f0a8282f4::t_94920d1312bf07 1-22,25,27-38,44-61,65,71,74,76-77,79,89-90,92-93,95-96,98-99,101-102,104,109-110,112,115-117,119-120,122-123,125,130-132,134-135,137-138,140,145-147,149-152,154-158,160-161,166-167,193-194,196,201-203,205,207-209,211-212,235-237,239-240,246-247,253-255,257-258,260,262-264,266-267,269-270,290-291,298-299,301-302,304-374,376,378-379,400-401
+workflows/project.yaml
+  h_0f977de3f043fc 2-3
+workflows/fee-shares-minter/offchain/README.md
+  s_a5372f0a8282f4::t_c75ababc8a13fd 23-29
+  s_a5372f0a8282f4::t_07cf0ae92fa31f 52-67
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.7",
+  "base_commit_sha": "95ef2f9acaa8019892c1ec8f9361a5be89999ae3",
+  "prompts": {},
+  "humans": {
+    "h_0f977de3f043fc": {
+      "author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  },
+  "sessions": {
+    "s_a5372f0a8282f4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dbb6cd1b-26a7-4534-b665-df7f6f1ab953",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
