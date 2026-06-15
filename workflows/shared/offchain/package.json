@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "description": "Shared off-chain helpers reused across all workflows. Imported via relative paths (e.g. ../../shared/offchain/checkUpkeep) — its own node_modules is needed so the helper's `import 'viem'` etc. resolve when the workflow bundles or type-checks.",
+  "scripts": {
+    "link-operator:devnet:unsigned": "cre account link-key --project-root=../.. --env=../../../.env --target=devnet-settings --owner-label AaveCREOperator --unsigned --yes --allow-unknown-chains",
+    "link-operator:production:unsigned": "cre account link-key --project-root=../.. --env=../../../.env --target=production-settings --owner-label AaveCREOperator --unsigned --yes"
+  },
   "dependencies": {
     "@chainlink/cre-sdk": "1.6.0",
     "viem": "2.48.4"

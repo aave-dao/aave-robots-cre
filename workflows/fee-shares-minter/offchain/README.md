@@ -20,13 +20,13 @@ The on-chain ABI is sourced from a checked-in `as const` TypeScript file at [`wo
       "chainName": "ethereum-mainnet",
       "targets": [
         {
-          "minter": "0x...",   // deployed FeeSharesMinter address
-          "hub": "0x...",      // Aave V4 Hub to mint on (e.g. CORE_HUB)
-          "assetId": 0          // asset id within that Hub
-        }
-      ]
-    }
-  ]
+          "minter": "0x...", // deployed FeeSharesMinter address
+          "hub": "0x...", // Aave V4 Hub to mint on (e.g. CORE_HUB)
+          "assetId": 0, // asset id within that Hub
+        },
+      ],
+    },
+  ],
 }
 ```
 
@@ -49,3 +49,19 @@ Run from the repository's `workflows/` directory (where `project.yaml` lives):
 cre workflow simulate ./fee-shares-minter/offchain --target=staging-settings
 cre workflow deploy   ./fee-shares-minter/offchain --target=production-settings
 ```
+
+## Unsigned transactions (governance / multisig)
+
+`npm run` shortcuts live in [`offchain/package.json`](./package.json) (run from this folder). The `:unsigned` variants pass `--unsigned`, which **prints the raw transaction instead of broadcasting it** — nothing is signed or sent on-chain:
+
+```bash
+npm run deploy:production:unsigned     # upsert (register/update)
+npm run activate:production:unsigned
+npm run pause:production:unsigned
+npm run delete:production:unsigned
+```
+
+Prerequisites and caveats:
+
+- `--unsigned` requires `<target>.account.workflow-owner-address` in [`project.yaml`](../../project.yaml) — set it to the workflow owner, i.e. the **`AaveCREOperator` address**. The CLI computes the `workflowId` from that owner and builds a tx with `to = WorkflowRegistry`.
+- Because the owner is the operator **contract**, you don't propose the printed tx verbatim. Its `data` is reusable as-is for same-signature calls (`activate` / `pause` / `delete` share the registry's selectors); retarget `to` → the operator address and propose it from the operator's owner (Aave governance). `deploy` (upsert) is the exception — the operator takes a struct, so re-encode via `cast calldata "upsertWorkflow(...)"` against the operator.

@@ -4,7 +4,7 @@
     {
       "chainName": "ethereum-mainnet",
       "isTestnet": false,
-      "minter": "0x5459F1d41358f85E9c073152dEbA33D9c3aB0BF1"
+      "minter": "0x0000000000000000000000000000000000000000" // TODO: deployed minter address
     }
   ]
 }

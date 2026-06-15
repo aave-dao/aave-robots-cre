@@ -19,7 +19,7 @@ import {FeeSharesMinter} from '../../src/FeeSharesMinter.sol';
 //   --rpc-url tenderly_devnet --unlocked --broadcast -vvvv
 contract ConfigureAllHubs is Script {
   uint16 internal constant THRESHOLD_BPS = 1;
-  address internal constant MINTER = 0x5459F1d41358f85E9c073152dEbA33D9c3aB0BF1;
+  address internal constant MINTER = 0x0000000000000000000000000000000000000000; // TODO: deployed minter address
 
   function run() external {
     IAccessManagerEnumerable accessManager = AaveV4Ethereum.ACCESS_MANAGER;

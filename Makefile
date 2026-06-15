@@ -15,10 +15,18 @@ typecheck-fee-shares-minter :; cd workflows/fee-shares-minter/offchain && npm ru
 test-offchain-fee-shares-minter :; cd workflows/fee-shares-minter/offchain && npm test
 
 # `cast wallet import <name>` first, then set ACCOUNT_NAME in .env.
-deploy-account :; forge script ${contract} --rpc-url ${chain} --account ${ACCOUNT_NAME} -vvvv --slow $(if ${dry},,--verify --broadcast)
+deploy-account :; forge script ${contract} --rpc-url ${chain} --account ${ACCOUNT_NAME} -vvvv --slow $(if ${dry},,--verify ${verifier} --broadcast)
 
 DEPLOY_CHAIN_Mainnet := mainnet
 DEPLOY_CHAIN_Devnet := tenderly_devnet
 
+# Tenderly virtual testnets verify against <rpc-url>/verify with a custom verifier;
+# mainnet uses the default Etherscan verifier (foundry.toml [etherscan] + ETHERSCAN_API_KEY).
+DEPLOY_VERIFIER_Devnet := --verifier custom --verifier-url $(RPC_TENDERLY_DEVNET)/verify
+
 deploy-fee-shares-minter :; @[ -n "$(DEPLOY_CHAIN_${env})" ] || { echo "ERROR: pass 'env=Mainnet' or 'env=Devnet'"; exit 1; }; \
-	make deploy-account contract=workflows/fee-shares-minter/scripts/DeployFeeSharesMinter.s.sol:DeployFeeSharesMinter chain=$(DEPLOY_CHAIN_${env}) dry=${dry}
+	make deploy-account contract=workflows/fee-shares-minter/scripts/DeployFeeSharesMinter.s.sol:DeployFeeSharesMinter chain=$(DEPLOY_CHAIN_${env}) verifier="$(DEPLOY_VERIFIER_${env})" dry=${dry}
+
+# WORKFLOW_REGISTRY=0x... make deploy-cre-operator env=Mainnet [dry=1]
+deploy-cre-operator :; @[ -n "$(DEPLOY_CHAIN_${env})" ] || { echo "ERROR: pass 'env=Mainnet' or 'env=Devnet'"; exit 1; }; \
+	make deploy-account contract=workflows/shared/scripts/DeployAaveCREOperator.s.sol:DeployAaveCREOperator chain=$(DEPLOY_CHAIN_${env}) verifier="$(DEPLOY_VERIFIER_${env})" dry=${dry}
