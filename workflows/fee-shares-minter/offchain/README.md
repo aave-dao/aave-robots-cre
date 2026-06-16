@@ -63,5 +63,6 @@ npm run delete:production:unsigned
 
 Prerequisites and caveats:
 
-- `--unsigned` requires `<target>.account.workflow-owner-address` in [`project.yaml`](../../project.yaml) — set it to the workflow owner, i.e. the **`AaveCREOperator` address**. The CLI computes the `workflowId` from that owner and builds a tx with `to = WorkflowRegistry`.
-- Because the owner is the operator **contract**, you don't propose the printed tx verbatim. Its `data` is reusable as-is for same-signature calls (`activate` / `pause` / `delete` share the registry's selectors); retarget `to` → the operator address and propose it from the operator's owner (Aave governance). `deploy` (upsert) is the exception — the operator takes a struct, so re-encode via `cast calldata "upsertWorkflow(...)"` against the operator.
+- `--unsigned` requires `<target>.account.workflow-owner-address` in [`project.yaml`](../../project.yaml) — set it to the workflow owner, i.e. the **Aave multisig Safe address**. The CLI computes the `workflowId` from that owner and builds a tx with `to = WorkflowRegistry`.
+- The owning Safe is the registry-level workflow owner, so propose the printed transaction (`to = WorkflowRegistry`, the Safe's `data`) directly through the Safe — when it executes, the Safe is `msg.sender` and the registry accepts it.
+- The Safe must first be linked once as a workflow owner via `cre account link-key` (with `workflow-owner-address` set to the Safe).
