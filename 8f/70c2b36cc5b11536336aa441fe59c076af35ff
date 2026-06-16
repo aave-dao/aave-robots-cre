@@ -1,0 +1,28 @@
+workflows/fee-shares-minter/offchain/README.md
+  s_a5372f0a8282f4::t_f00314c64a6d53 66-68
+README.md
+  s_a5372f0a8282f4::t_24c3abb8c0f6c4 49
+  h_0f977de3f043fc 51
+  s_a5372f0a8282f4::t_343d579df12638 23
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.7",
+  "base_commit_sha": "8f70c2b36cc5b11536336aa441fe59c076af35ff",
+  "prompts": {},
+  "humans": {
+    "h_0f977de3f043fc": {
+      "author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  },
+  "sessions": {
+    "s_a5372f0a8282f4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dbb6cd1b-26a7-4534-b665-df7f6f1ab953",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
