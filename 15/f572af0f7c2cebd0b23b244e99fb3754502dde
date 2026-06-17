@@ -1,0 +1,63 @@
+workflows/shared/src/IAaveCREReceiver.sol
+  s_a5372f0a8282f4::t_7092562b5209d6 1
+workflows/fee-shares-minter/README.md
+  s_a5372f0a8282f4::t_3c8abd99f95b61 68-69,72,79-87
+  s_a5372f0a8282f4::t_40f657db764285 31,38,77
+  s_a5372f0a8282f4::t_280a1368acd4dc 37
+workflows/fee-shares-minter/scripts/devnet/ConfigureAllHubs.s.sol
+  s_a5372f0a8282f4::t_658403505c8756 15,39
+  s_a5372f0a8282f4::t_b84a5d44b88b17 1
+README.md
+  s_a5372f0a8282f4::t_4a42e4d28e3d3d 89
+workflows/fee-shares-minter/src/FeeSharesMinter.sol
+  s_a5372f0a8282f4::t_09fdf7aee4104f 1,17,24,34,37,39-42,44-45,49-51,84-85,90,102-106,108-109,116,121-122
+package.json
+  s_a5372f0a8282f4::t_69d84fbf0ea371 4,10
+  s_a5372f0a8282f4::t_388a4a0570a84d 21
+workflows/fee-shares-minter/tests/helpers/MockHubHelpers.sol
+  s_a5372f0a8282f4::t_ffb0fe38e4c475 9
+workflows/fee-shares-minter/src/IFeeSharesMinter.sol
+  s_a5372f0a8282f4::t_daad00f9f5d110 1,16,19-24,26,34-36,38,41-46,48,51,53,56
+workflows/fee-shares-minter/scripts/DeployFeeSharesMinter.s.sol
+  s_a5372f0a8282f4::t_c048136049dfe3 1
+.github/workflows/main.yml
+  s_a5372f0a8282f4::t_9b2adbd2e0b314 50
+  s_a5372f0a8282f4::t_e48905e6b920b8 11-14,16,18-19,24-30,32,34-40
+  s_a5372f0a8282f4::t_8a9ede73fa2aaa 31
+  h_0f977de3f043fc 33
+workflows/fee-shares-minter/tests/FeeSharesMinter.t.sol
+  s_a5372f0a8282f4::t_9037eba7bb9ec8 117-119,121-123,136-139
+  s_a5372f0a8282f4::t_d0e2676e777cee 150,157,162,166,171,176,179,181-182,188,190,195,197,202,207,216,234,275,306,393,429
+  s_a5372f0a8282f4::t_1abbcf2806d2f9 67,70,73,76,79,88,93,95-96,104,109-110,124,141,144,147,212,220,532,541
+  s_a5372f0a8282f4::t_f2680f5516c95d 127
+  s_a5372f0a8282f4::t_dd079eae37d1e7 85,154
+  s_a5372f0a8282f4::t_eb1c8be712476c 90,99-101,113-114,159,168,185,192,199
+workflows/fee-shares-minter/tests/FeeSharesMinter.fork.t.sol
+  s_a5372f0a8282f4::t_bb563d7f2cdc4c 50,56,67
+  s_a5372f0a8282f4::t_9037eba7bb9ec8 59-63
+  s_a5372f0a8282f4::t_54a5b7f43f278a 27
+  s_a5372f0a8282f4::t_3163f2c3859e04 42,49,55,70,74,107
+  s_a5372f0a8282f4::t_b31a3e5fdd327b 46
+  s_a5372f0a8282f4::t_db53b81c18569c 53,66
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "15f572af0f7c2cebd0b23b244e99fb3754502dde",
+  "prompts": {},
+  "humans": {
+    "h_0f977de3f043fc": {
+      "author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  },
+  "sessions": {
+    "s_a5372f0a8282f4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dbb6cd1b-26a7-4534-b665-df7f6f1ab953",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
