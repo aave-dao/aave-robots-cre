@@ -86,7 +86,7 @@ CI (`.github/workflows/main.yml`) runs the foundry suite (unit + fork tests), th
 
 ## Deploying
 
-Deployments use a foundry-managed keystore account. Create one with `cast wallet import <name>`, set `ACCOUNT_NAME=<name>` in `.env`, then run the per-robot make targets (e.g. `make deploy-mainnet-fee-shares-minter-dry` / `make deploy-mainnet-fee-shares-minter`). See each robot's README for the available targets.
+Deployments use a foundry-managed keystore account. Create one with `cast wallet import <name>`, set `ACCOUNT_NAME=<name>` in `.env`, then run the per-robot make targets (e.g. `make deploy-fee-shares-minter env=Mainnet dry=true` to simulate, `make deploy-fee-shares-minter env=Mainnet` to broadcast). See each robot's README for the available targets.
 
 ## Adding a new robot
 

@@ -24,11 +24,7 @@ contract FeeSharesMinterForkTest is Test {
   IAccessManagerEnumerable internal accessManager;
 
   function setUp() public {
-    string memory rpc = vm.envOr('RPC_MAINNET', string(''));
-    if (bytes(rpc).length == 0) {
-      vm.skip(true);
-    }
-    vm.createSelectFork(rpc);
+    vm.createSelectFork(vm.envString('RPC_MAINNET'));
 
     hub = AaveV4EthereumHubs.CORE_HUB;
     accessManager = AaveV4Ethereum.ACCESS_MANAGER;
@@ -43,35 +39,39 @@ contract FeeSharesMinterForkTest is Test {
     assertTrue(isMember);
   }
 
-  function test_fork_setConfig_acceptsRealAssetIds() public {
+  function test_fork_updateFeesToAssetsThreshold_acceptsRealAssetIds() public {
     assertGt(hub.getAssetCount(), 0);
 
     vm.expectEmit(address(minter));
-    emit IFeeSharesMinter.ConfigUpdated(address(hub), 0, 1);
+    emit IFeeSharesMinter.FeesToAssetsThresholdUpdated(address(hub), 0, 1);
 
     vm.prank(owner);
-    minter.setConfig(address(hub), 0, 1);
-    assertEq(minter.getConfig(address(hub), 0), 1);
+    minter.updateFeesToAssetsThreshold(address(hub), 0, 1);
+    assertEq(minter.getFeesToAssetsThreshold(address(hub), 0), 1);
   }
 
-  function test_fork_disableMinting_byGuardian() public {
+  function test_fork_disableFeeSharesMinting_byGuardian() public {
     vm.prank(owner);
-    minter.setConfig(address(hub), 0, 1);
-    assertEq(minter.getConfig(address(hub), 0), 1);
+    minter.updateFeesToAssetsThreshold(address(hub), 0, 1);
+    assertEq(minter.getFeesToAssetsThreshold(address(hub), 0), 1);
 
     vm.expectEmit(address(minter));
-    emit IFeeSharesMinter.ConfigUpdated(address(hub), 0, minter.DISABLED_THRESHOLD());
+    emit IFeeSharesMinter.FeesToAssetsThresholdUpdated(
+      address(hub),
+      0,
+      minter.DISABLED_THRESHOLD()
+    );
 
     vm.prank(guardian);
-    minter.disableMinting(address(hub), 0);
-    assertEq(minter.getConfig(address(hub), 0), minter.DISABLED_THRESHOLD());
+    minter.disableFeeSharesMinting(address(hub), 0);
+    assertEq(minter.getFeesToAssetsThreshold(address(hub), 0), minter.DISABLED_THRESHOLD());
   }
 
-  function test_fork_setConfig_revertsForUnlistedAsset() public {
+  function test_fork_updateFeesToAssetsThreshold_revertsForUnlistedAsset() public {
     uint256 assetCount = hub.getAssetCount();
     vm.prank(owner);
     vm.expectRevert(IHub.AssetNotListed.selector);
-    minter.setConfig(address(hub), assetCount, 1);
+    minter.updateFeesToAssetsThreshold(address(hub), assetCount, 1);
   }
 
   function test_fork_canMint_revertsWith_NotConfigured() public {
@@ -104,7 +104,7 @@ contract FeeSharesMinterForkTest is Test {
     }
 
     vm.prank(owner);
-    minter.setConfig(address(hub), assetId, threshold);
+    minter.updateFeesToAssetsThreshold(address(hub), assetId, threshold);
 
     assertTrue(minter.canMint(address(hub), assetId));
     bytes memory checkData = abi.encode(_pairsOne(address(hub), assetId));

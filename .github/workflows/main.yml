@@ -8,31 +8,36 @@ on:
   workflow_dispatch:
 
 jobs:
+  lint:
+    name: Prettier lint check
+    uses: aave-dao/github-workflows/.github/workflows/foundry-lint-prettier.yml@main
+
   foundry:
+    name: Foundry build, size & test
     runs-on: ubuntu-latest
+    env:
+      RPC_MAINNET: https://eth-mainnet.g.alchemy.com/v2/${{ secrets.ALCHEMY_API_KEY }}
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - uses: foundry-rs/foundry-toolchain@v1
-      - name: Build
-        run: forge build --sizes
-      - name: Unit tests
-        run: forge test --no-match-contract 'Fork' -vvv
-      - name: Require ALCHEMY_API_KEY for fork tests
-        env:
-          ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_API_KEY }}
-        run: |
-          if [ -z "$ALCHEMY_API_KEY" ]; then
-            echo "::error::secrets.ALCHEMY_API_KEY is not configured for this repo." >&2
-            echo "::error::The fork test suite forks Ethereum mainnet and must run on every PR." >&2
-            echo "::error::Inherit the ALCHEMY_API_KEY org secret or set it in repo Settings → Secrets and variables → Actions." >&2
-            exit 1
-          fi
-      - name: Fork tests
-        env:
-          RPC_MAINNET: https://eth-mainnet.g.alchemy.com/v2/${{ secrets.ALCHEMY_API_KEY }}
-        run: forge test --match-contract 'Fork' -vvv --ffi
+
+      - name: Foundry setup
+        uses: aave-dao/github-workflows/.github/actions/foundry-setup@main
+        with:
+          FOUNDRY_VERSION: stable
+
+      - name: Forge size
+        uses: aave-dao/github-workflows/.github/actions/foundry-size@main
+
+      - name: Forge test
+        id: test
+        uses: aave-dao/github-workflows/.github/actions/foundry-test@main
+
+      # foundry-test reports failures via its testStatus output without failing the step.
+      - name: Fail if any test failed
+        if: steps.test.outputs.testStatus != '0'
+        run: exit 1
 
   typescript:
     runs-on: ubuntu-latest
@@ -42,7 +47,7 @@ jobs:
           submodules: recursive
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "22"
       - uses: oven-sh/setup-bun@v2
       - name: Install shared offchain deps
         working-directory: workflows/shared/offchain

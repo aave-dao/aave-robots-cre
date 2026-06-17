@@ -28,14 +28,14 @@ fee-shares-minter/
 
 `onReport` is intentionally **permissionless**: `metadata` (workflow id / owner / name) and `msg.sender` (the forwarder) are both ignored. Justification — the underlying action is already gated by:
 
-1. The owner-configured per-asset ratio threshold (`setConfig`).
+1. The owner-configured per-asset ratio threshold (`updateFeesToAssetsThreshold`).
 2. The on-chain `HUB_FEE_MINTER_ROLE` check on the Hub itself.
 3. The shares-round-to-non-zero guard inside `_canMint`.
 
 ### State
 
-- `_minAccruedFeesPercent[hub][assetId]` — per-(hub, asset) BPS threshold (`PercentageMath.PERCENTAGE_FACTOR` max; 0 disables minting).
-- Set via `setConfig(hub, assetId, minAccruedFeesPercent)` — owner-only, validates that the asset is listed on the hub.
+- `_feesToAssetsThreshold[hub][assetId]` — per-(hub, asset) BPS threshold (`PercentageMath.PERCENTAGE_FACTOR` max; 0 disables minting).
+- Set via `updateFeesToAssetsThreshold(hub, assetId, feesToAssetsThreshold)` — owner-only, validates that the asset is listed on the hub.
 
 ### Mint conditions (`_canMint`)
 
@@ -65,14 +65,23 @@ The fork suite forks Ethereum mainnet against [`AaveV4EthereumHubs.CORE_HUB`](ht
 
 ```bash
 # from repo root, with ACCOUNT_NAME=<your-keystore-name> in .env
-make deploy-mainnet-fee-shares-minter-dry        # simulate
-make deploy-mainnet-fee-shares-minter            # broadcast — prompts for keystore password
+make deploy-fee-shares-minter env=Mainnet dry=true   # simulate
+make deploy-fee-shares-minter env=Mainnet            # broadcast — prompts for keystore password
 ```
 
-`DeployMainnet` in `scripts/DeployFeeSharesMinter.s.sol` uses `GovernanceV3Ethereum.EXECUTOR_LVL_1` as owner; copy and adapt for other chains.
+`DeployFeeSharesMinter` in `scripts/DeployFeeSharesMinter.s.sol` uses `GovernanceV3Ethereum.EXECUTOR_LVL_1` as owner and `GovernanceV3Ethereum.GOVERNANCE_GUARDIAN` as guardian; copy and adapt for other chains.
 
 ### Post-deploy
 
 1. Governance grants `HUB_FEE_MINTER_ROLE` (id `102`) to the deployed minter on the relevant AccessManager.
-2. Owner calls `setConfig(hub, assetId, minAccruedFeesPercent)` for each `(hub, asset)` pair to enable.
+2. Owner calls `updateFeesToAssetsThreshold(hub, assetId, feesToAssetsThreshold)` for each `(hub, asset)` pair to enable.
 3. Add the deployment + per-asset targets to [`offchain/config.production.json`](offchain/config.production.json) and (re)deploy the CRE workflow — see [`offchain/README.md`](offchain/README.md).
+
+Post-deploy checks (substitute the deployed `<minter>`, the `<accessManager>`, and an enabled `<hub>`/`<assetId>`):
+
+```bash
+cast call <minter> "owner()(address)" --rpc-url mainnet
+cast call <minter> "guardian()(address)" --rpc-url mainnet
+cast call <accessManager> "hasRole(uint64,address)(bool,uint32)" 102 <minter> --rpc-url mainnet
+cast call <minter> "getFeesToAssetsThreshold(address,uint256)(uint16)" <hub> <assetId> --rpc-url mainnet
+```

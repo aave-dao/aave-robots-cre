@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import {Script, console} from 'forge-std/Script.sol';
@@ -12,7 +12,7 @@ import {IHub} from 'aave-v4/hub/interfaces/IHub.sol';
 import {FeeSharesMinter} from '../../src/FeeSharesMinter.sol';
 
 // Tenderly devnet setup: grants HUB_FEE_MINTER_ROLE to the deployed
-// FeeSharesMinter and calls setConfig(hub, assetId, 1) for every asset on every
+// FeeSharesMinter and calls updateFeesToAssetsThreshold(hub, assetId, 1) for every asset on every
 // Aave v4 Ethereum hub so the off-chain workflow has something to mint against.
 //
 // forge script workflows/fee-shares-minter/scripts/devnet/ConfigureAllHubs.s.sol:ConfigureAllHubs \
@@ -36,7 +36,7 @@ contract ConfigureAllHubs is Script {
       uint256 assetCount = hub.getAssetCount();
       console.log('hub', address(hub), 'assetCount', assetCount);
       for (uint256 assetId = 0; assetId < assetCount; assetId++) {
-        FeeSharesMinter(MINTER).setConfig(address(hub), assetId, THRESHOLD_BPS);
+        FeeSharesMinter(MINTER).updateFeesToAssetsThreshold(address(hub), assetId, THRESHOLD_BPS);
       }
     }
     vm.stopBroadcast();

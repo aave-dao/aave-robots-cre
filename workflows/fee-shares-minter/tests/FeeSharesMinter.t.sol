@@ -64,63 +64,67 @@ contract FeeSharesMinterTest is Test {
     assertFalse(minter.supportsInterface(0xffffffff));
   }
 
-  function test_setConfig_revertsWith_OwnableUnauthorized() public {
+  function test_updateFeesToAssetsThreshold_revertsWith_OwnableUnauthorized() public {
     vm.prank(bob);
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, bob));
-    minter.setConfig(hub, ASSET_ID, 100);
+    minter.updateFeesToAssetsThreshold(hub, ASSET_ID, 100);
   }
 
-  function test_setConfig_revertsWhenCalledByGuardian() public {
+  function test_updateFeesToAssetsThreshold_revertsWhenCalledByGuardian() public {
     vm.prank(guardian);
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, guardian));
-    minter.setConfig(hub, ASSET_ID, 100);
+    minter.updateFeesToAssetsThreshold(hub, ASSET_ID, 100);
   }
 
-  function test_fuzz_setConfig(uint16 minAccruedFeesPercent) public {
+  function test_fuzz_updateFeesToAssetsThreshold(uint16 minAccruedFeesPercent) public {
     minAccruedFeesPercent = uint16(
       bound(minAccruedFeesPercent, 1, PercentageMath.PERCENTAGE_FACTOR)
     );
 
     vm.expectEmit(address(minter));
-    emit IFeeSharesMinter.ConfigUpdated(hub, ASSET_ID, minAccruedFeesPercent);
+    emit IFeeSharesMinter.FeesToAssetsThresholdUpdated(hub, ASSET_ID, minAccruedFeesPercent);
 
     vm.prank(admin);
-    minter.setConfig(hub, ASSET_ID, minAccruedFeesPercent);
+    minter.updateFeesToAssetsThreshold(hub, ASSET_ID, minAccruedFeesPercent);
 
-    assertEq(minter.getConfig(hub, ASSET_ID), minAccruedFeesPercent);
+    assertEq(minter.getFeesToAssetsThreshold(hub, ASSET_ID), minAccruedFeesPercent);
   }
 
-  function test_setConfig_independentPerPair() public {
+  function test_updateFeesToAssetsThreshold_independentPerPair() public {
     vm.startPrank(admin);
-    minter.setConfig(hub, ASSET_ID, 100);
-    minter.setConfig(hub, OTHER_ASSET_ID, 200);
+    minter.updateFeesToAssetsThreshold(hub, ASSET_ID, 100);
+    minter.updateFeesToAssetsThreshold(hub, OTHER_ASSET_ID, 200);
     vm.stopPrank();
 
-    assertEq(minter.getConfig(hub, ASSET_ID), 100);
-    assertEq(minter.getConfig(hub, OTHER_ASSET_ID), 200);
-    assertEq(minter.getConfig(hub, 3), 0);
+    assertEq(minter.getFeesToAssetsThreshold(hub, ASSET_ID), 100);
+    assertEq(minter.getFeesToAssetsThreshold(hub, OTHER_ASSET_ID), 200);
+    assertEq(minter.getFeesToAssetsThreshold(hub, 3), 0);
   }
 
-  function test_setConfig_independentPerHub() public {
+  function test_updateFeesToAssetsThreshold_independentPerHub() public {
     address otherHub = makeAddr('otherHub');
     MockHubHelpers.setAssetCount(otherHub, 10);
 
     vm.startPrank(admin);
-    minter.setConfig(hub, ASSET_ID, 100);
-    minter.setConfig(otherHub, ASSET_ID, 200);
+    minter.updateFeesToAssetsThreshold(hub, ASSET_ID, 100);
+    minter.updateFeesToAssetsThreshold(otherHub, ASSET_ID, 200);
     vm.stopPrank();
 
-    assertEq(minter.getConfig(hub, ASSET_ID), 100);
-    assertEq(minter.getConfig(otherHub, ASSET_ID), 200);
+    assertEq(minter.getFeesToAssetsThreshold(hub, ASSET_ID), 100);
+    assertEq(minter.getFeesToAssetsThreshold(otherHub, ASSET_ID), 200);
   }
 
-  function test_setConfig_revertsWith_InvalidConfig_whenZero() public {
+  function test_updateFeesToAssetsThreshold_revertsWith_InvalidFeesToAssetsThreshold_whenZero()
+    public
+  {
     vm.prank(admin);
-    vm.expectRevert(abi.encodeWithSelector(IFeeSharesMinter.InvalidConfig.selector, uint16(0)));
-    minter.setConfig(hub, ASSET_ID, 0);
+    vm.expectRevert(
+      abi.encodeWithSelector(IFeeSharesMinter.InvalidFeesToAssetsThreshold.selector, uint16(0))
+    );
+    minter.updateFeesToAssetsThreshold(hub, ASSET_ID, 0);
   }
 
-  function test_fuzz_setConfig_revertsWith_InvalidConfig_whenAboveMax(
+  function test_fuzz_updateFeesToAssetsThreshold_revertsWith_InvalidFeesToAssetsThreshold_whenAboveMax(
     uint16 minAccruedFeesPercent
   ) public {
     minAccruedFeesPercent = uint16(
@@ -129,88 +133,91 @@ contract FeeSharesMinterTest is Test {
 
     vm.prank(admin);
     vm.expectRevert(
-      abi.encodeWithSelector(IFeeSharesMinter.InvalidConfig.selector, minAccruedFeesPercent)
+      abi.encodeWithSelector(
+        IFeeSharesMinter.InvalidFeesToAssetsThreshold.selector,
+        minAccruedFeesPercent
+      )
     );
-    minter.setConfig(hub, ASSET_ID, minAccruedFeesPercent);
+    minter.updateFeesToAssetsThreshold(hub, ASSET_ID, minAccruedFeesPercent);
   }
 
-  function test_setConfig_revertsWith_AssetNotListed() public {
+  function test_updateFeesToAssetsThreshold_revertsWith_AssetNotListed() public {
     vm.prank(admin);
     vm.expectRevert(IHub.AssetNotListed.selector);
-    minter.setConfig(hub, ASSET_COUNT, 100);
+    minter.updateFeesToAssetsThreshold(hub, ASSET_COUNT, 100);
   }
 
-  function test_disableMinting_byOwner() public {
+  function test_disableFeeSharesMinting_byOwner() public {
     _setMinPercent(ASSET_ID, HAPPY_THRESHOLD_BPS);
 
     vm.expectEmit(address(minter));
-    emit IFeeSharesMinter.ConfigUpdated(hub, ASSET_ID, minter.DISABLED_THRESHOLD());
+    emit IFeeSharesMinter.FeesToAssetsThresholdUpdated(hub, ASSET_ID, minter.DISABLED_THRESHOLD());
 
     vm.prank(admin);
-    minter.disableMinting(hub, ASSET_ID);
+    minter.disableFeeSharesMinting(hub, ASSET_ID);
 
-    assertEq(minter.getConfig(hub, ASSET_ID), minter.DISABLED_THRESHOLD());
+    assertEq(minter.getFeesToAssetsThreshold(hub, ASSET_ID), minter.DISABLED_THRESHOLD());
   }
 
-  function test_disableMinting_byGuardian() public {
+  function test_disableFeeSharesMinting_byGuardian() public {
     _setMinPercent(ASSET_ID, HAPPY_THRESHOLD_BPS);
 
     vm.prank(guardian);
-    minter.disableMinting(hub, ASSET_ID);
+    minter.disableFeeSharesMinting(hub, ASSET_ID);
 
-    assertEq(minter.getConfig(hub, ASSET_ID), minter.DISABLED_THRESHOLD());
+    assertEq(minter.getFeesToAssetsThreshold(hub, ASSET_ID), minter.DISABLED_THRESHOLD());
   }
 
-  function test_disableMinting_revertsWith_NotOwnerOrGuardian() public {
+  function test_disableFeeSharesMinting_revertsWith_NotOwnerOrGuardian() public {
     vm.prank(bob);
     vm.expectRevert(
       abi.encodeWithSelector(IWithGuardian.OnlyGuardianOrOwnerInvalidCaller.selector, bob)
     );
-    minter.disableMinting(hub, ASSET_ID);
+    minter.disableFeeSharesMinting(hub, ASSET_ID);
   }
 
-  function test_disableMinting_isIdempotent_whenAlreadyDisabled() public {
+  function test_disableFeeSharesMinting_isIdempotent_whenAlreadyDisabled() public {
     vm.startPrank(admin);
-    minter.disableMinting(hub, ASSET_ID);
-    minter.disableMinting(hub, ASSET_ID);
+    minter.disableFeeSharesMinting(hub, ASSET_ID);
+    minter.disableFeeSharesMinting(hub, ASSET_ID);
     vm.stopPrank();
 
-    assertEq(minter.getConfig(hub, ASSET_ID), minter.DISABLED_THRESHOLD());
+    assertEq(minter.getFeesToAssetsThreshold(hub, ASSET_ID), minter.DISABLED_THRESHOLD());
   }
 
-  function test_disableMinting_onUnconfiguredAsset_doesNotRevert() public {
+  function test_disableFeeSharesMinting_onUnconfiguredAsset_doesNotRevert() public {
     vm.prank(admin);
-    minter.disableMinting(hub, ASSET_ID);
+    minter.disableFeeSharesMinting(hub, ASSET_ID);
 
-    assertEq(minter.getConfig(hub, ASSET_ID), minter.DISABLED_THRESHOLD());
+    assertEq(minter.getFeesToAssetsThreshold(hub, ASSET_ID), minter.DISABLED_THRESHOLD());
   }
 
-  function test_disableMinting_doesNotValidateAssetId() public {
+  function test_disableFeeSharesMinting_doesNotValidateAssetId() public {
     vm.prank(admin);
-    minter.disableMinting(hub, ASSET_COUNT + 100);
+    minter.disableFeeSharesMinting(hub, ASSET_COUNT + 100);
 
-    assertEq(minter.getConfig(hub, ASSET_COUNT + 100), minter.DISABLED_THRESHOLD());
+    assertEq(minter.getFeesToAssetsThreshold(hub, ASSET_COUNT + 100), minter.DISABLED_THRESHOLD());
   }
 
-  function test_disableMinting_makesCanMintFalse() public {
+  function test_disableFeeSharesMinting_makesCanMintFalse() public {
     _setupHappyPath();
     _assertCanMint(true);
 
     vm.prank(guardian);
-    minter.disableMinting(hub, ASSET_ID);
+    minter.disableFeeSharesMinting(hub, ASSET_ID);
 
     _assertCanMint(false);
   }
 
-  function test_setConfig_reEnablesPreviouslyDisabledPair() public {
+  function test_updateFeesToAssetsThreshold_reEnablesPreviouslyDisabledPair() public {
     _setupHappyPath();
 
     vm.prank(admin);
-    minter.disableMinting(hub, ASSET_ID);
+    minter.disableFeeSharesMinting(hub, ASSET_ID);
     _assertCanMint(false);
 
     vm.prank(admin);
-    minter.setConfig(hub, ASSET_ID, HAPPY_THRESHOLD_BPS);
+    minter.updateFeesToAssetsThreshold(hub, ASSET_ID, HAPPY_THRESHOLD_BPS);
     _assertCanMint(true);
   }
 
@@ -224,7 +231,7 @@ contract FeeSharesMinterTest is Test {
     _assertCanMint(true);
 
     vm.prank(admin);
-    minter.disableMinting(hub, ASSET_ID);
+    minter.disableFeeSharesMinting(hub, ASSET_ID);
     _assertCanMint(false);
   }
 
@@ -265,7 +272,7 @@ contract FeeSharesMinterTest is Test {
     MockHubHelpers.setPreviewShares(hub, ASSET_ID, 10, 5);
 
     vm.prank(admin);
-    minter.disableMinting(hub, ASSET_ID);
+    minter.disableFeeSharesMinting(hub, ASSET_ID);
 
     _assertCanMint(false);
   }
@@ -296,7 +303,7 @@ contract FeeSharesMinterTest is Test {
   function test_checkUpkeep_skipsDisabled() public {
     _setupHappyPath();
     vm.prank(admin);
-    minter.disableMinting(hub, ASSET_ID);
+    minter.disableFeeSharesMinting(hub, ASSET_ID);
 
     (bool upkeepNeeded, bytes memory performData) = minter.checkUpkeep(
       abi.encode(_pairsOne(hub, ASSET_ID))
@@ -383,7 +390,7 @@ contract FeeSharesMinterTest is Test {
   function test_onReport_revertsWith_ConditionsNotMet_whenSingleDisabled() public {
     _setupHappyPath();
     vm.prank(admin);
-    minter.disableMinting(hub, ASSET_ID);
+    minter.disableFeeSharesMinting(hub, ASSET_ID);
 
     vm.prank(anyone);
     vm.expectRevert(IFeeSharesMinter.ConditionsNotMet.selector);
@@ -419,7 +426,7 @@ contract FeeSharesMinterTest is Test {
     _setupHappyPath();
     _setupHappyPathOn(hub, OTHER_ASSET_ID);
     vm.prank(admin);
-    minter.disableMinting(hub, OTHER_ASSET_ID);
+    minter.disableFeeSharesMinting(hub, OTHER_ASSET_ID);
 
     IFeeSharesMinter.HubAssetPair[] memory pairs = new IFeeSharesMinter.HubAssetPair[](2);
     pairs[0] = IFeeSharesMinter.HubAssetPair(hub, ASSET_ID);
@@ -522,7 +529,7 @@ contract FeeSharesMinterTest is Test {
 
   function _setMinPercent(uint256 assetId, uint16 percent) internal {
     vm.prank(admin);
-    minter.setConfig(hub, assetId, percent);
+    minter.updateFeesToAssetsThreshold(hub, assetId, percent);
   }
 
   function _setupHappyPath() internal {
@@ -531,7 +538,7 @@ contract FeeSharesMinterTest is Test {
 
   function _setupHappyPathOn(address h, uint256 assetId) internal {
     vm.prank(admin);
-    minter.setConfig(h, assetId, HAPPY_THRESHOLD_BPS);
+    minter.updateFeesToAssetsThreshold(h, assetId, HAPPY_THRESHOLD_BPS);
     MockHubHelpers.setAddedAssets(h, assetId, HAPPY_ADDED);
     MockHubHelpers.setAccruedFees(h, assetId, HAPPY_FEES);
     MockHubHelpers.setPreviewShares(h, assetId, HAPPY_FEES, HAPPY_PREVIEW_SHARES);

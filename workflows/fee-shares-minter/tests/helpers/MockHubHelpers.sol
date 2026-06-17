@@ -6,6 +6,7 @@ import {IHub} from 'aave-v4/hub/interfaces/IHub.sol';
 import {IHubBase} from 'aave-v4/hub/interfaces/IHubBase.sol';
 
 library MockHubHelpers {
+  bool public constant IS_TEST = true;
   Vm internal constant VM = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
 
   function setAssetCount(address hub, uint256 count) internal {

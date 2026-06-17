@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
 import {OwnableWithGuardian} from 'solidity-utils/contracts/access-control/OwnableWithGuardian.sol';
@@ -14,15 +14,15 @@ import {IFeeSharesMinter} from './IFeeSharesMinter.sol';
 /// @title FeeSharesMinter
 /// @author Aave Labs
 /// @notice Receives reports from the CRE workflow and mints fee shares on the hub when the configured threshold is crossed.
+/// @dev The contract must hold `HUB_FEE_MINTER_ROLE` on each target hub to call `IHub.mintFeeShares`.
 contract FeeSharesMinter is IFeeSharesMinter, OwnableWithGuardian, Rescuable {
   using PercentageMath for uint256;
 
   /// @inheritdoc IFeeSharesMinter
   uint16 public constant override DISABLED_THRESHOLD = type(uint16).max;
 
-  mapping(address hub => mapping(uint256 assetId => uint16)) internal _minAccruedFeesPercent;
+  mapping(address hub => mapping(uint256 assetId => uint16)) internal _feesToAssetsThreshold;
 
-  /// @dev Constructor.
   /// @param initialOwner_ The address of the initial owner.
   /// @param initialGuardian_ The address of the initial guardian.
   constructor(
@@ -31,28 +31,27 @@ contract FeeSharesMinter is IFeeSharesMinter, OwnableWithGuardian, Rescuable {
   ) OwnableWithGuardian(initialOwner_, initialGuardian_) {}
 
   /// @inheritdoc IFeeSharesMinter
-  function setConfig(
+  function updateFeesToAssetsThreshold(
     address hub,
     uint256 assetId,
-    uint16 minAccruedFeesPercent
+    uint16 feesToAssetsThreshold
   ) external onlyOwner {
-    require(_isActiveThreshold(minAccruedFeesPercent), InvalidConfig(minAccruedFeesPercent));
+    require(
+      _isActiveThreshold(feesToAssetsThreshold),
+      InvalidFeesToAssetsThreshold(feesToAssetsThreshold)
+    );
     require(assetId < IHub(hub).getAssetCount(), IHub.AssetNotListed());
-    _minAccruedFeesPercent[hub][assetId] = minAccruedFeesPercent;
-    emit ConfigUpdated(hub, assetId, minAccruedFeesPercent);
+    _feesToAssetsThreshold[hub][assetId] = feesToAssetsThreshold;
+    emit FeesToAssetsThresholdUpdated(hub, assetId, feesToAssetsThreshold);
   }
 
   /// @inheritdoc IFeeSharesMinter
-  function disableMinting(address hub, uint256 assetId) external onlyOwnerOrGuardian {
-    _minAccruedFeesPercent[hub][assetId] = DISABLED_THRESHOLD;
-    emit ConfigUpdated(hub, assetId, DISABLED_THRESHOLD);
+  function disableFeeSharesMinting(address hub, uint256 assetId) external onlyOwnerOrGuardian {
+    _feesToAssetsThreshold[hub][assetId] = DISABLED_THRESHOLD;
+    emit FeesToAssetsThresholdUpdated(hub, assetId, DISABLED_THRESHOLD);
   }
 
   /// @inheritdoc IReceiver
-  /// @dev `onReport` is permissionless: both `metadata` and `msg.sender` are
-  /// ignored. The action (`IHub.mintFeeShares`) is already gated by the owner's
-  /// per-asset threshold, the hub's role check, and the round-to-non-zero guard
-  /// in `_canMint`.
   function onReport(bytes calldata /* metadata */, bytes calldata report) external override {
     HubAssetPair[] memory pairs = abi.decode(report, (HubAssetPair[]));
     uint256 minted = 0;
@@ -82,13 +81,13 @@ contract FeeSharesMinter is IFeeSharesMinter, OwnableWithGuardian, Rescuable {
   }
 
   /// @inheritdoc IFeeSharesMinter
-  function getConfig(address hub, uint256 assetId) external view returns (uint16) {
-    return _minAccruedFeesPercent[hub][assetId];
+  function getFeesToAssetsThreshold(address hub, uint256 assetId) external view returns (uint16) {
+    return _feesToAssetsThreshold[hub][assetId];
   }
 
   /// @inheritdoc IFeeSharesMinter
   function canMint(address hub, uint256 assetId) external view returns (bool) {
-    require(_minAccruedFeesPercent[hub][assetId] != 0, NotConfigured(hub, assetId));
+    require(_feesToAssetsThreshold[hub][assetId] != 0, NotConfigured(hub, assetId));
     return _canMint(hub, assetId);
   }
 
@@ -100,22 +99,27 @@ contract FeeSharesMinter is IFeeSharesMinter, OwnableWithGuardian, Rescuable {
       interfaceId == type(IERC165).interfaceId;
   }
 
+  /// @dev Returns true only when every mint condition holds for the (hub, asset):
+  /// - an active threshold is set (in `(0, PercentageMath.PERCENTAGE_FACTOR]`);
+  /// - the hub has added assets for the id (`getAddedAssets > 0`);
+  /// - the accrued-fees-to-added-assets ratio is at least the threshold;
+  /// - the accrued fees preview to a non-zero amount of shares (`previewAddByAssets > 0`).
   function _canMint(address hub, uint256 assetId) internal view virtual returns (bool) {
-    uint16 minAccruedFeesPercent = _minAccruedFeesPercent[hub][assetId];
-    if (!_isActiveThreshold(minAccruedFeesPercent)) return false;
+    uint16 feesToAssetsThreshold = _feesToAssetsThreshold[hub][assetId];
+    if (!_isActiveThreshold(feesToAssetsThreshold)) return false;
 
     IHub targetHub = IHub(hub);
     uint256 accruedFees = targetHub.getAssetAccruedFees(assetId);
     uint256 totalAddedAssets = targetHub.getAddedAssets(assetId);
 
     if (totalAddedAssets == 0) return false;
-    if (accruedFees.percentDivDown(totalAddedAssets) < minAccruedFeesPercent) return false;
+    if (accruedFees.percentDivDown(totalAddedAssets) < feesToAssetsThreshold) return false;
 
     return targetHub.previewAddByAssets(assetId, accruedFees) > 0;
   }
 
-  function _isActiveThreshold(uint16 minAccruedFeesPercent) internal pure returns (bool) {
-    return minAccruedFeesPercent > 0 && minAccruedFeesPercent <= PercentageMath.PERCENTAGE_FACTOR;
+  function _isActiveThreshold(uint16 feesToAssetsThreshold) internal pure returns (bool) {
+    return feesToAssetsThreshold > 0 && feesToAssetsThreshold <= PercentageMath.PERCENTAGE_FACTOR;
   }
 
   /// @inheritdoc Rescuable
