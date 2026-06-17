@@ -64,7 +64,7 @@ git submodule update --init --recursive
 
 - `min-release-age=30` — installed package versions must have been on the registry for at least 30 days (npm 11+; value is in days).
 - `save-exact=true` — installs pin exact versions (no `^` / `~`).
-- `engine-strict=true` — installs fail on engine mismatch.
+- `engine-strict=false` — engine mismatches warn instead of failing, so installs work on the npm bundled with Node 22 (npm 10); npm 11 is still recommended for `min-release-age` to apply.
 
 All packages in the tree are pinned exactly. Adding a dependency requires waiting out the 30-day maturity gate before the lockfile can resolve.
 
