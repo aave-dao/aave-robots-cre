@@ -1,0 +1,45 @@
+# CRE workflow settings. The engine (main.ts) iterates every `evms` entry in the
+# config, so each workflow drives all of its grouped chains. The 19 robots are
+# split across two workflows to stay within the per-workflow trigger limit (10)
+# and the per-owner workflow quota (3). Deploy/simulate per target, e.g.:
+#   cre workflow simulate ./automation --target=agents-1-production-settings
+
+# ethereum (5) + avalanche (4) = 9 triggers. Schedule */1 (1 min)
+agents-1-production-settings:
+  user-workflow:
+    workflow-name: "automation-agents-1"
+  workflow-artifacts:
+    workflow-path: "./main.ts"
+    config-path: "./config.agents-1.json"
+    secrets-path: ""
+
+# polygon + optimism + arbitrum + base + bnb (2 each) = 10 triggers. Schedule
+# */5 (5 min)
+agents-2-production-settings:
+  user-workflow:
+    workflow-name: "automation-agents-2"
+  workflow-artifacts:
+    workflow-path: "./main.ts"
+    config-path: "./config.agents-2.json"
+    secrets-path: ""
+
+# Governance robots (Execution / Governance / Voting Chain Robots) via MailboxCRE.
+# 11 robots split across two workflows to stay within the 10-trigger limit.
+
+# ethereum (3) + avalanche (2) = 5 triggers. Schedule */5 (5 min)
+gov-1-production-settings:
+  user-workflow:
+    workflow-name: "automation-gov-1"
+  workflow-artifacts:
+    workflow-path: "./main.ts"
+    config-path: "./config.gov-1.json"
+    secrets-path: ""
+
+# polygon (2) + optimism + arbitrum + base + bnb (1 each) = 6 triggers. Schedule */5 (5 min)
+gov-2-production-settings:
+  user-workflow:
+    workflow-name: "automation-gov-2"
+  workflow-artifacts:
+    workflow-path: "./main.ts"
+    config-path: "./config.gov-2.json"
+    secrets-path: ""
